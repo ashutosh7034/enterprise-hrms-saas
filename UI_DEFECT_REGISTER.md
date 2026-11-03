@@ -1,0 +1,15 @@
+# ENTERPRISE HRMS — UI DEFECT REGISTER & REMEDIATION LOG
+**Audit Date**: November 2026  
+**Status**: All Identified Defects Resolved (100% Closed)  
+
+---
+
+| Defect ID | Module / Component | Severity | Description | Root Cause | Remediation Applied | Status |
+|---|---|---|---|---|---|---|
+| **DEF-UI-001** | Left Sidebar Footer | **High** | Bottom text (*Phase 1–8 Production Suite*) overlapping and clipping with navigation scrollbar as seen in user screenshot 1. | Missing `height: 100vh; overflow: hidden;` on `#sidebar` and unpinned footer `div` lacking `flex-shrink: 0`. | Pinned footer with `.sidebar-footer`, set `flex: 1 1 auto; overflow-y: auto;` on navigation with custom subtle 5px scrollbar. | **CLOSED** |
+| **DEF-UI-002** | Topbar User Area | **Medium** | Plain text credentials and raw logout button without profile dropdown or avatar as seen in user screenshot 2. | Header had hardcoded static text and plain logout `<form>` without dropdown menu markup. | Implemented SaaS User Profile dropdown with avatar initials, role badge, quick links, and secure CSRF logout. | **CLOSED** |
+| **DEF-UI-003** | User Profile Access | **Medium** | No universal way for authenticated staff to review their profile details and account telemetry. | No global profile modal or universal profile route existed. | Built reusable `<x-ui.profile-modal />` containing Personal, Employment, and Account Telemetry with Page 94 salary masking. | **CLOSED** |
+| **DEF-UI-004** | Master Pages Hierarchy | **Low** | Master pages lacked breadcrumbs, KPI summary cards, and consistent empty states. | Master templates had heterogeneous headers and basic Bootstrap card styling. | Rebuilt Department, Location, Designation, Company, Category, and Contractor master views with breadcrumbs, KPI tiles, and empty states. | **CLOSED** |
+| **DEF-UI-005** | Mobile Sidebar Drawer | **Medium** | Sidebar was static and caused layout horizontal compression on viewports below 992px. | Missing mobile responsive transform rules and toggle trigger. | Added mobile hamburger button (`#sidebarToggleBtn`), mobile backdrop (`#sidebarBackdrop`), and offcanvas transitions. | **CLOSED** |
+| **DEF-UI-006** | Global Design Tokens | **Low** | Color variables and button classes were scattered across individual inline style tags. | Styles were not consolidated into an enterprise design system file. | Built and linked `public/css/enterprise-design-system.css` containing tokens for colors, elevations, typography, and badges. | **CLOSED** |
+
