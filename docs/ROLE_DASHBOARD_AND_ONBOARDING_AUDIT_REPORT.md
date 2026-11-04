@@ -93,4 +93,3 @@ Status:   100% SUCCESS — 0 FAILURES, 0 SKIPPED
 - [x] HR Executive logging in lands directly on `/dashboard/hr` and cannot access `/dashboard/admin` (HTTP 403).
 - [x] Manager MSS lands on `/dashboard/manager` with strict Page 94 salary segregation.
 - [x] All 216 tests passing with 1,300 assertions.
-

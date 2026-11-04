@@ -119,3 +119,38 @@ The new `<x-ui.profile-modal />` component provides three structured sections ac
 - **Dropdowns verified**: Viewport bounds, escape key handling, click outside closure.
 - **Automated test suite**: 100% passing across master and security test suites.
 
+---
+
+## 7. Global Table Pagination & Workspace Layout Fix
+
+### 7.1 Problem Statement & Root Cause
+Across multiple modules including Central Blacklist (`/blacklist`), Audit Trail Logs (`/audit-logs`), and Damage Assessments (`/damage-assessments`), table pagination displayed browser-default unstyled blue links, two duplicated navigation blocks (`sm:hidden` and `hidden sm:flex-1`), and giant 300px SVGs creating massive blank whitespace between the table and footer.
+
+**Root Cause**:
+In Laravel 13, the default paginator template defaults to Tailwind CSS (`pagination::tailwind`). Because this application uses Bootstrap 5.3 and does not load Tailwind:
+1. `<svg class="w-5 h-5">` had no CSS width/height constraints, expanding to full browser default container dimensions (300px+ height/width).
+2. Tailwind responsive display classes `sm:hidden` and `hidden` failed to evaluate, causing both mobile and desktop pagination blocks to render concurrently.
+3. Pagination links used unstyled inline-flex spans with Tailwind utility classes that had no matching styles in Bootstrap.
+
+### 7.2 Architecture Solution
+1. **Registered Framework Pagination Provider**:
+   Configured `\Illuminate\Pagination\Paginator::useBootstrapFive()` in `app/Providers/AppServiceProvider.php`.
+2. **Published Enterprise Design System Pagination Templates**:
+   - `resources/views/vendor/pagination/bootstrap-5.blade.php`
+   - `resources/views/vendor/pagination/default.blade.php`
+   - `resources/views/vendor/pagination/simple-bootstrap-5.blade.php`
+   - `resources/views/vendor/pagination/simple-default.blade.php`
+3. **Engineered Comprehensive Design Tokens**:
+   Added `.pagination-enterprise`, `.page-item`, `.page-link`, `.pagination-info` CSS rules in `public/css/enterprise-design-system.css` and `resources/views/layouts/app.blade.php`:
+   - Interactive states styled with `--brand-indigo` (`#4F46E5`), `--text-secondary`, and `--border-color`.
+   - Active page highlighted with indigo gradient and elevation shadow.
+   - Chevron icons styled via Bootstrap Icons (`bi-chevron-left`, `bi-chevron-right`) and strict SVG clamping (`14px x 14px`).
+   - Standardized `card-footer` and `table-responsive` flush layout.
+4. **Standardized View Hierarchy**:
+   Standardized `resources/views/audit_logs/index.blade.php` to use `@if($logs->hasPages()) <div class="card-footer bg-white py-3">` for seamless table attachment.
+
+### 7.3 Verification & Regression Results
+- Automated feature test: `UiScreensVerificationTest::test_pagination_renders_enterprise_design_system_across_screens` passed with 62 assertions.
+- Verified across 15 paginated screens (Blacklist, Audit Logs, Damage Assessments, Employees, Attendance, Assets, Master entities). Zero unstyled SVGs or duplicate blocks.
+
+

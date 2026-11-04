@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AttendanceRecord;
 use App\Models\BiometricDevice;
+use App\Models\BiometricPunchLog;
 use App\Models\Company;
 use App\Models\Employee;
 use App\Models\OvertimeRecord;
@@ -35,6 +36,11 @@ class AttendanceCalculationEngineTest extends TestCase
     public function test_full_day_punches_generate_present_status_with_deviations(): void
     {
         $testDate = '2026-10-21'; // Wednesday (Working day)
+        BiometricPunchLog::withoutGlobalScopes()
+            ->where('employee_id', $this->employee->id)
+            ->whereDate('punch_time', $testDate)
+            ->delete();
+
         $bioService = app(BiometricIntegrationService::class);
         $attService = app(AttendanceCalculationService::class);
 

@@ -58,7 +58,7 @@ class BiometricPunchIngestionTest extends TestCase
 
     public function test_preserves_original_punch_timestamp_distinct_from_sync_time(): void
     {
-        $historicalPunchTime = '2026-10-' . mt_rand(10, 25) . ' ' . sprintf('%02d:%02d:%02d', mt_rand(8, 17), mt_rand(10, 50), mt_rand(10, 50));
+        $historicalPunchTime = '2026-07-' . mt_rand(10, 25) . ' ' . sprintf('%02d:%02d:%02d', mt_rand(8, 17), mt_rand(10, 50), mt_rand(10, 50));
 
         $service = app(BiometricIntegrationService::class);
         $service->ingestPunches(

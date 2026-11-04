@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -13,6 +14,7 @@ class Company extends Model
     use HasFactory, SoftDeletes, Auditable;
 
     protected $fillable = [
+        'tenant_id',
         'name',
         'code',
         'cin_number',
@@ -24,6 +26,11 @@ class Company extends Model
         'logo_path',
         'status',
     ];
+
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
+    }
 
     public function locations(): HasMany
     {

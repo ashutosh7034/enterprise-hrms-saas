@@ -47,7 +47,58 @@ use App\Http\Controllers\DocumentGenerationController;
 use App\Http\Controllers\EmployeeDocumentEssController;
 use App\Http\Controllers\Document\DocumentVerificationController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\Platform\PlatformAuthController;
+use App\Http\Controllers\Platform\PlatformDashboardController;
+use App\Http\Controllers\Platform\TenantManagementController;
 use Illuminate\Support\Facades\Route;
+
+// =========================================================================
+// PLATFORM SUPER ADMIN (ADVAIT IT SOLUTIONS) - DEDICATED GUARD ROUTES
+// =========================================================================
+Route::prefix('platform')->group(function () {
+    Route::middleware(['platform.guest', 'throttle:60,1'])->group(function () {
+        Route::get('/login', [PlatformAuthController::class, 'showLogin'])->name('platform.login');
+        Route::post('/login', [PlatformAuthController::class, 'login'])->name('platform.login.post');
+        Route::match(['get', 'post'], '/fast-login', [PlatformAuthController::class, 'fastLogin'])->name('platform.fast-login');
+    });
+
+    Route::middleware(['auth:platform', 'platform.active'])->group(function () {
+        Route::post('/logout', [PlatformAuthController::class, 'logout'])->name('platform.logout');
+        Route::get('/dashboard', [PlatformDashboardController::class, 'index'])->name('platform.dashboard');
+
+        // Customer Tenant Management (Advait IT Solutions SaaS Platform)
+        Route::get('/tenants', [TenantManagementController::class, 'index'])->name('platform.tenants.index');
+        Route::get('/tenants/create', [TenantManagementController::class, 'create'])->name('platform.tenants.create');
+        Route::post('/tenants', [TenantManagementController::class, 'store'])->name('platform.tenants.store');
+        Route::get('/tenants/{tenant}', [TenantManagementController::class, 'show'])->name('platform.tenants.show');
+        Route::get('/tenants/{tenant}/edit', [TenantManagementController::class, 'edit'])->name('platform.tenants.edit');
+        Route::put('/tenants/{tenant}', [TenantManagementController::class, 'update'])->name('platform.tenants.update');
+        Route::post('/tenants/{tenant}/status', [TenantManagementController::class, 'updateStatus'])->name('platform.tenants.status');
+
+        // Subscription Plans Management
+        Route::resource('plans', \App\Http\Controllers\Platform\SubscriptionPlanController::class, ['as' => 'platform'])->except(['destroy']);
+
+        // Tenant Subscriptions Management
+        Route::get('/subscriptions', [\App\Http\Controllers\Platform\TenantSubscriptionController::class, 'index'])->name('platform.subscriptions.index');
+        Route::get('/tenants/{tenant}/subscription/create', [\App\Http\Controllers\Platform\TenantSubscriptionController::class, 'create'])->name('platform.subscriptions.create');
+        Route::post('/tenants/{tenant}/subscription', [\App\Http\Controllers\Platform\TenantSubscriptionController::class, 'store'])->name('platform.subscriptions.store');
+        Route::get('/subscriptions/{subscription}', [\App\Http\Controllers\Platform\TenantSubscriptionController::class, 'show'])->name('platform.subscriptions.show');
+        Route::post('/subscriptions/{subscription}/activate', [\App\Http\Controllers\Platform\TenantSubscriptionController::class, 'activate'])->name('platform.subscriptions.activate');
+        Route::post('/subscriptions/{subscription}/renew', [\App\Http\Controllers\Platform\TenantSubscriptionController::class, 'renew'])->name('platform.subscriptions.renew');
+        Route::post('/subscriptions/{subscription}/suspend', [\App\Http\Controllers\Platform\TenantSubscriptionController::class, 'suspend'])->name('platform.subscriptions.suspend');
+        Route::post('/subscriptions/{subscription}/reactivate', [\App\Http\Controllers\Platform\TenantSubscriptionController::class, 'reactivate'])->name('platform.subscriptions.reactivate');
+        Route::post('/subscriptions/{subscription}/cancel', [\App\Http\Controllers\Platform\TenantSubscriptionController::class, 'cancel'])->name('platform.subscriptions.cancel');
+        Route::post('/subscriptions/{subscription}/extend', [\App\Http\Controllers\Platform\TenantSubscriptionController::class, 'extend'])->name('platform.subscriptions.extend');
+
+        // Subscription Invoices & Billing
+        Route::get('/invoices', [\App\Http\Controllers\Platform\SubscriptionInvoiceController::class, 'index'])->name('platform.invoices.index');
+        Route::get('/invoices/{invoice}', [\App\Http\Controllers\Platform\SubscriptionInvoiceController::class, 'show'])->name('platform.invoices.show');
+        Route::post('/invoices/{invoice}/mark-paid', [\App\Http\Controllers\Platform\SubscriptionInvoiceController::class, 'markAsPaid'])->name('platform.invoices.mark-paid');
+
+        // Platform Audit Logs
+        Route::get('/audit-logs', [\App\Http\Controllers\Platform\PlatformAuditLogController::class, 'index'])->name('platform.audit-logs.index');
+    });
+});
 
 // Guest Authentication Routes
 Route::middleware('guest')->group(function () {
@@ -62,10 +113,13 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('/verify-document/{code}', [DocumentVerificationController::class, 'verifyDirect'])->name('documents.verify.direct');
 });
 
-// Authenticated Application Routes
-Route::middleware('auth')->group(function () {
+// Authenticated Application Routes (Customer HRMS Web Guard)
+Route::middleware(['auth:web', 'tenant.active', 'tenant.subscription'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::post('/company/switch', [CompanyController::class, 'switchCompany'])->name('company.switch');
+
+    // Customer Tenant Subscription & License Overview
+    Route::get('/subscription', [\App\Http\Controllers\TenantSubscriptionProfileController::class, 'show'])->name('subscription.show');
 
     // Default & Role-Specific Dashboards
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -126,17 +180,19 @@ Route::middleware('auth')->group(function () {
             Route::post('/reviews/{review}/resolve', [BlacklistController::class, 'resolveReview'])->name('match-reviews.resolve');
         });
 
-        // Asset Management
-        Route::resource('assets', AssetController::class);
-        Route::post('assets/{asset}/allocate', [AssetController::class, 'allocate'])->name('assets.allocate');
-        Route::post('asset-allocations/{allocation}/return', [AssetController::class, 'processReturn'])->name('asset-allocations.return');
+        // Asset Management & Lifecycle (Entitlement Enforced)
+        Route::middleware('entitled:asset_management')->group(function () {
+            Route::resource('assets', AssetController::class);
+            Route::post('assets/{asset}/allocate', [AssetController::class, 'allocate'])->name('assets.allocate');
+            Route::post('asset-allocations/{allocation}/return', [AssetController::class, 'processReturn'])->name('asset-allocations.return');
 
-        // Fines Catalog & Damage Assessments
-        Route::resource('fine-masters', FineMasterController::class)->except(['show', 'destroy']);
-        Route::resource('damage-assessments', DamageAssessmentController::class)->only(['index', 'create', 'store']);
-        Route::post('damage-assessments/{assessment}/approve', [DamageAssessmentController::class, 'approve'])->name('damage-assessments.approve');
-        Route::post('damage-assessments/{assessment}/waiver', [DamageAssessmentController::class, 'applyWaiver'])->name('damage-assessments.waiver');
-        Route::post('fine-recovery/{record}/payment', [DamageAssessmentController::class, 'recordPayment'])->name('fine-recovery.payment');
+            // Fines Catalog & Damage Assessments
+            Route::resource('fine-masters', FineMasterController::class)->except(['show', 'destroy']);
+            Route::resource('damage-assessments', DamageAssessmentController::class)->only(['index', 'create', 'store']);
+            Route::post('damage-assessments/{assessment}/approve', [DamageAssessmentController::class, 'approve'])->name('damage-assessments.approve');
+            Route::post('damage-assessments/{assessment}/waiver', [DamageAssessmentController::class, 'applyWaiver'])->name('damage-assessments.waiver');
+            Route::post('fine-recovery/{record}/payment', [DamageAssessmentController::class, 'recordPayment'])->name('fine-recovery.payment');
+        });
 
         // Phase 3: Shift Master & Rosters
         Route::resource('shifts', ShiftController::class);
@@ -354,8 +410,8 @@ Route::middleware('auth')->group(function () {
         Route::get('{document}/download', [EmployeeDocumentEssController::class, 'downloadPdf'])->name('download');
     });
 
-    // Administrative Document Engine & Template Master (HO Admin & HR Executive)
-    Route::middleware('role:ho_admin,hr_executive')->prefix('admin/documents')->name('admin.documents.')->group(function () {
+    // Administrative Document Engine & Template Master (HO Admin & HR Executive - Entitlement Enforced)
+    Route::middleware(['role:ho_admin,hr_executive', 'entitled:document_management'])->prefix('admin/documents')->name('admin.documents.')->group(function () {
         // Document Template Master
         Route::get('templates', [DocumentTemplateController::class, 'index'])->name('templates.index');
         Route::get('templates/create', [DocumentTemplateController::class, 'create'])->name('templates.create');

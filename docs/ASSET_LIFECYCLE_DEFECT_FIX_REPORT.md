@@ -123,4 +123,3 @@ All routes verified against live application server at `http://127.0.0.1:8000`:
 | **Employee ESS**| `/assets` | **403 Forbidden** | 403 Forbidden | **PASS** | ESS user denied administrative asset access |
 
 Laravel application log (`storage/logs/laravel.log`) verified clean with zero relation exceptions.
-

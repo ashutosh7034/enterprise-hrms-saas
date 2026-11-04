@@ -51,6 +51,12 @@ class CompanyController extends Controller
             abort(403, 'Unauthorized. Only HO Team Admins can register legal entities.');
         }
 
+        $tenant = $this->companyContext->getActiveTenant() ?: Auth::user()->tenant();
+        $quota = app(\App\Services\LicenseEntitlementService::class)->canAddCompany($tenant);
+        if (!$quota['allowed']) {
+            return back()->withInput()->with('error', $quota['message']);
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:191'],
             'code' => ['required', 'string', 'max:50', 'unique:companies,code'],
@@ -62,6 +68,8 @@ class CompanyController extends Controller
             'address' => ['nullable', 'string'],
             'status' => ['required', 'in:Active,Inactive'],
         ]);
+
+        $validated['tenant_id'] = $tenant?->id;
 
         Company::create($validated);
 

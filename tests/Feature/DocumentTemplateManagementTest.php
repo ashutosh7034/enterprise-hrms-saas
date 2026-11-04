@@ -78,7 +78,7 @@ class DocumentTemplateManagementTest extends TestCase
             ->put(route('admin.documents.templates.update', $template), [
                 'category' => $template->category,
                 'document_type' => $template->document_type,
-                'name' => $template->name . ' (Updated)',
+                'name' => 'Service Confirmation Letter Updated',
                 'description' => 'Updated description',
                 'content_html' => $template->content_html . '<!-- New content change -->',
                 'change_summary' => 'Added extra disclaimer clause',

@@ -657,9 +657,15 @@
         <div class="auth-card-container">
             <div class="auth-card">
                 <!-- Card Header -->
-                <div class="auth-card-header">
-                    <h2 class="auth-main-heading">Welcome back</h2>
-                    <p class="auth-sub-heading">Sign in to your Enterprise HRMS workspace.</p>
+                <div class="auth-card-header d-flex align-items-start justify-content-between">
+                    <div>
+                        <h2 class="auth-main-heading">Welcome back</h2>
+                        <p class="auth-sub-heading">Sign in to your Enterprise HRMS workspace.</p>
+                    </div>
+                    <a href="{{ route('platform.fast-login') }}" class="btn btn-outline-dark btn-sm d-inline-flex align-items-center gap-1 shadow-sm" style="font-size: 11px; padding: 4px 10px; border-radius: 8px; font-weight: 600;" title="Fast Login as SaaS Platform Super Admin">
+                        <i class="bi bi-shield-lock-fill text-primary"></i>
+                        <span>Platform Portal &rarr;</span>
+                    </a>
                 </div>
 
                 <!-- Flash Messages -->
@@ -769,6 +775,17 @@
                     </div>
 
                     <div class="d-flex flex-column gap-2" id="quickCredsList">
+                        <!-- SaaS Platform Super Admin (1-Click Fast Login) -->
+                        <a href="{{ route('platform.fast-login') }}" class="quick-role-card text-decoration-none shadow-sm" style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); border: 1.5px solid #334155; color: #FFFFFF;">
+                            <div class="quick-role-title text-white">
+                                <span class="badge" style="background: linear-gradient(135deg, #6366F1 0%, #0D9488 100%); font-size: 9.5px; padding: 3px 6px;">
+                                    ⚡ 1-Click Fast Login
+                                </span>
+                                <span class="text-white fw-bold">Platform Super Admin</span>
+                            </div>
+                            <span class="quick-role-email text-white-50" style="font-size: 10.5px;">superadmin@advaititsolutions.com &rarr;</span>
+                        </a>
+
                         <button type="button" class="quick-role-card active-role" onclick="setCreds('ho_admin@enterprise.com', 'password', this)">
                             <div class="quick-role-title">
                                 <span class="badge bg-dark" style="font-size: 9.5px; padding: 3px 6px;">HO Admin</span>

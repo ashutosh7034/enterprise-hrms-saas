@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Company;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +16,8 @@ class CompanyContextService
     public function getActiveCompanyId(): ?int
     {
         $sessionCompanyId = Session::get(self::SESSION_KEY);
-        $user = Auth::user();
+        $authUser = Auth::guard('web')->user() ?: Auth::user();
+        $user = ($authUser instanceof User) ? $authUser : null;
 
         if ($user) {
             // If user cannot switch companies, enforce their assigned company
@@ -23,12 +25,29 @@ class CompanyContextService
                 return $user->company_id;
             }
 
-            // If user can switch, return session company if valid, otherwise fallback to user company
-            if ($sessionCompanyId && Company::where('id', $sessionCompanyId)->where('status', 'Active')->exists()) {
-                return (int) $sessionCompanyId;
+            $userTenantId = $user->company?->tenant_id;
+
+            // If user can switch, return session company if valid and belongs to the authorized tenant
+            if ($sessionCompanyId && $userTenantId) {
+                $sessionExists = Company::where('id', $sessionCompanyId)
+                    ->where('status', 'Active')
+                    ->where('tenant_id', $userTenantId)
+                    ->exists();
+
+                if ($sessionExists) {
+                    return (int) $sessionCompanyId;
+                }
             }
 
-            return $user->company_id ?: Company::where('status', 'Active')->orderBy('id')->value('id');
+            // Fallback to assigned company or first active company in their tenant
+            if ($user->company_id) {
+                return $user->company_id;
+            }
+
+            return Company::where('status', 'Active')
+                ->when($userTenantId, fn($q) => $q->where('tenant_id', $userTenantId))
+                ->orderBy('id')
+                ->value('id');
         }
 
         return $sessionCompanyId ? (int) $sessionCompanyId : null;
@@ -40,9 +59,20 @@ class CompanyContextService
         return $id ? Company::find($id) : null;
     }
 
+    public function getActiveTenantId(): ?int
+    {
+        return $this->getActiveCompany()?->tenant_id;
+    }
+
+    public function getActiveTenant(): ?Tenant
+    {
+        return $this->getActiveCompany()?->tenant;
+    }
+
     public function setActiveCompanyId(int $companyId): bool
     {
-        $user = Auth::user();
+        $authUser = Auth::guard('web')->user() ?: Auth::user();
+        $user = ($authUser instanceof User) ? $authUser : null;
         if ($user && !$this->canUserSwitchCompany($user) && $user->company_id !== $companyId) {
             return false;
         }
@@ -50,6 +80,14 @@ class CompanyContextService
         $company = Company::where('id', $companyId)->where('status', 'Active')->first();
         if (!$company) {
             return false;
+        }
+
+        // Strict Tenant Boundary Check: User cannot switch to a company outside their tenant!
+        if ($user) {
+            $userTenantId = $user->company?->tenant_id;
+            if (!$userTenantId || $company->tenant_id !== $userTenantId) {
+                return false; // Cross-tenant or null-tenant switch blocked!
+            }
         }
 
         $previousId = Session::get(self::SESSION_KEY);
@@ -71,21 +109,30 @@ class CompanyContextService
 
     public function getAccessibleCompanies(): Collection
     {
-        $user = Auth::user();
+        $authUser = Auth::guard('web')->user() ?: Auth::user();
+        $user = ($authUser instanceof User) ? $authUser : null;
         if (!$user) {
             return Company::where('status', 'Active')->get();
         }
 
         if ($this->canUserSwitchCompany($user)) {
-            return Company::where('status', 'Active')->orderBy('name')->get();
+            $userTenantId = $user->company?->tenant_id;
+            if ($userTenantId) {
+                return Company::where('tenant_id', $userTenantId)
+                    ->where('status', 'Active')
+                    ->orderBy('name')
+                    ->get();
+            }
+
+            return Company::where('id', $user->company_id)->where('status', 'Active')->get();
         }
 
         return Company::where('id', $user->company_id)->where('status', 'Active')->get();
     }
 
-    public function canUserSwitchCompany(?User $user): bool
+    public function canUserSwitchCompany(mixed $user): bool
     {
-        if (!$user) {
+        if (!$user || !($user instanceof User)) {
             return false;
         }
 

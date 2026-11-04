@@ -18,7 +18,8 @@ class SetCompanyContext
     {
         $activeCompany = $this->companyContext->getActiveCompany();
         $accessibleCompanies = $this->companyContext->getAccessibleCompanies();
-        $canSwitchCompany = $this->companyContext->canUserSwitchCompany($request->user());
+        $user = $request->user();
+        $canSwitchCompany = ($user instanceof \App\Models\User) ? $this->companyContext->canUserSwitchCompany($user) : false;
 
         View::share('activeCompany', $activeCompany);
         View::share('accessibleCompanies', $accessibleCompanies);

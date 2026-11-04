@@ -10,7 +10,7 @@
 
 | Test Suite | Purpose | Tests | Assertions | Result |
 |---|---|---|---|---|
-| `UiScreensVerificationTest` | Verification of master screens rendering, design system compliance, exact strings, and login/logout flow. | 2 | 38 | **100% PASSED** |
+| `UiScreensVerificationTest` | Verification of master screens rendering, design system compliance, exact strings, pagination rendering, and login/logout flow. | 3 | 62 | **100% PASSED** |
 | `RoleBasedDashboardTest` | Verification of role isolation, HO Admin, HR Exec, Manager MSS (Page 94 compliance), Employee ESS, and candidate decoupling. | 12 | 60 | **100% PASSED** |
 | `SecurityAuditRegressionTest` | Cross-company isolation, legal entity boundaries, raw DB immutability, and dev credentials hiding in production. | 5 | 13 | **100% PASSED** |
 | `CentralBlacklistTest` | Trust registry rendering, multi-parameter filtering, match reviews, and role authorization. | 9 | 37 | **100% PASSED** |

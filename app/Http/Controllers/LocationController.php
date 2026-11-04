@@ -17,7 +17,7 @@ class LocationController extends Controller
 
     public function index(): View
     {
-        $locations = Location::with('company')->latest()->paginate(50);
+        $locations = Location::with('company')->orderBy('id', 'asc')->paginate(100);
         $activeCompany = $this->companyContext->getActiveCompany();
 
         return view('masters.locations.index', compact('locations', 'activeCompany'));

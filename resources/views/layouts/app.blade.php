@@ -52,6 +52,30 @@
             --status-info-dot: #64748B;
         }
 
+        /* Global Custom Scrollbar for Windows & Modern Browsers */
+        html {
+            scrollbar-width: thin;
+            scrollbar-color: #CBD5E1 transparent;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 9999px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94A3B8;
+        }
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--surface-canvas);
@@ -113,8 +137,11 @@
         .sidebar-nav {
             padding: 16px 12px;
             flex: 1 1 auto;
+            min-height: 0;
             overflow-y: auto;
             overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
         }
 
         .sidebar-nav::-webkit-scrollbar {
@@ -124,11 +151,11 @@
             background: transparent;
         }
         .sidebar-nav::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.12);
-            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.16);
+            border-radius: 9999px;
         }
         .sidebar-nav::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.32);
         }
 
         .sidebar-footer {
@@ -421,6 +448,114 @@
             font-size: 10.5px;
             padding: 2px 6px;
             border-radius: 4px;
+        }
+
+        /* Pagination & Table Footer Layout System */
+        .pagination-enterprise,
+        .pagination {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+
+        .pagination-enterprise .page-item,
+        .pagination .page-item {
+            margin: 0;
+        }
+
+        .pagination-enterprise .page-link,
+        .pagination .page-link {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+            padding: 4px 10px;
+            font-size: 12.5px;
+            font-weight: 500;
+            font-family: inherit;
+            line-height: 1;
+            color: var(--text-secondary, #475467);
+            background-color: #FFFFFF;
+            border: 1px solid var(--border-subtle, #E2E8F0);
+            border-radius: 6px !important;
+            text-decoration: none;
+            transition: all 0.15s ease-in-out;
+            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+        }
+
+        .pagination-enterprise .page-link:hover,
+        .pagination .page-link:hover {
+            color: #1E293B;
+            background-color: var(--surface-subtle, #F1F3F5);
+            border-color: var(--border-strong, #CBD5E1);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(16, 24, 40, 0.08);
+        }
+
+        .pagination-enterprise .page-item.active .page-link,
+        .pagination .page-item.active .page-link {
+            z-index: 2;
+            color: #FFFFFF !important;
+            background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%) !important;
+            border-color: #4F46E5 !important;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35);
+        }
+
+        .pagination-enterprise .page-item.disabled .page-link,
+        .pagination .page-item.disabled .page-link {
+            color: #94A3B8 !important;
+            background-color: #F8FAFC !important;
+            border-color: #E2E8F0 !important;
+            opacity: 0.65;
+            cursor: not-allowed;
+            pointer-events: none;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .pagination-enterprise .page-link.dots,
+        .pagination .page-link.dots {
+            border-color: transparent !important;
+            background-color: transparent !important;
+            cursor: default;
+            color: #94A3B8;
+        }
+
+        .pagination-info {
+            font-size: 12.5px;
+            color: #64748B;
+            letter-spacing: -0.01em;
+        }
+
+        /* Fallback protection: Clamp any unstyled SVGs in pagination */
+        nav[role="navigation"] svg,
+        .pagination svg,
+        svg.w-5.h-5 {
+            width: 14px !important;
+            height: 14px !important;
+            max-width: 14px !important;
+            max-height: 14px !important;
+            display: inline-block !important;
+            vertical-align: middle !important;
+        }
+
+        /* Card footer and table container alignment */
+        .card-footer {
+            background-color: #FFFFFF;
+            border-top: 1px solid var(--border-subtle, #E2E8F0);
+            padding: 12px 20px;
+            border-bottom-left-radius: 8px !important;
+            border-bottom-right-radius: 8px !important;
+        }
+
+        .table-responsive {
+            margin-bottom: 0;
         }
     </style>
     @yield('styles')
@@ -883,6 +1018,10 @@
                             <span style="font-size: 13px;">Notification Preferences</span>
                         </a>
                         @if(auth()->user()->isHoAdmin() || auth()->user()->isHrExecutive())
+                        <a href="{{ route('subscription.show') }}" class="dropdown-item d-flex align-items-center gap-2 py-2 px-3">
+                            <i class="bi bi-key text-secondary fs-6"></i>
+                            <span style="font-size: 13px;">Subscription & License</span>
+                        </a>
                         <a href="{{ route('audit-logs.index') }}" class="dropdown-item d-flex align-items-center gap-2 py-2 px-3">
                             <i class="bi bi-shield-check text-secondary fs-6"></i>
                             <span style="font-size: 13px;">Audit Trail & Governance</span>
@@ -911,6 +1050,13 @@
         @auth
         <div class="content-container">
             <!-- Flash Messages -->
+            @if(session('subscription_grace_warning'))
+                <div class="alert alert-warning alert-dismissible fade show border-0 shadow-sm" role="alert" style="background-color: #FFFBEB; color: #92400E; border-left: 4px solid #F59E0B !important;">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ session('subscription_grace_warning') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
             @if(session('success'))
                 <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert" style="background-color: var(--status-success-bg); color: var(--status-success-text); border-left: 4px solid var(--status-success-dot) !important;">
                     <i class="bi bi-check-circle-fill me-2"></i> {{ session('success') }}

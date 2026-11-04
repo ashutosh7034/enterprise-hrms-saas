@@ -61,6 +61,29 @@ class AuthController extends Controller
             return $this->redirectBasedOnRole($user);
         }
 
+        // Seamless check for SaaS Platform Super Admin credentials entered on the tenant login form
+        $platformUser = \App\Models\PlatformUser::where('email', $credentials['email'])->first();
+        if ($platformUser && \Illuminate\Support\Facades\Hash::check($credentials['password'], $platformUser->password)) {
+            if (!$platformUser->isActive()) {
+                return back()->withErrors([
+                    'email' => 'Your platform administrator account is deactivated. Please contact systems support.',
+                ])->onlyInput('email');
+            }
+
+            Auth::guard('platform')->login($platformUser, $request->boolean('remember'));
+            $request->session()->regenerate();
+            $platformUser->recordLogin($request->ip());
+
+            return redirect()->route('platform.dashboard')
+                ->with('success', 'Authenticated as SaaS Platform Super Admin.');
+        }
+
+        if ($platformUser) {
+            return redirect()->route('platform.login')->withErrors([
+                'email' => 'Invalid password for Platform Super Admin. Please sign in via the Platform Portal.',
+            ])->withInput(['email' => $credentials['email']]);
+        }
+
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
         ])->onlyInput('email');

@@ -126,9 +126,11 @@
                 </tbody>
             </table>
         </div>
-        <div class="p-3">
-            {{ $logs->links() }}
-        </div>
+        @if($logs->hasPages())
+            <div class="card-footer bg-white py-3">
+                {{ $logs->links() }}
+            </div>
+        @endif
     </div>
 </div>
 @endsection

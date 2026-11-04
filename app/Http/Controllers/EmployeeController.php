@@ -122,6 +122,15 @@ class EmployeeController extends Controller
             'pan_number.regex' => 'The PAN number must follow the standard 10-character Indian format (e.g. ABCDE1234F).',
         ]);
 
+        // 0. Check Tenant Subscription Employee Quota
+        $licenseEntitlement = app(\App\Services\LicenseEntitlementService::class);
+        $quota = $licenseEntitlement->canAddEmployee(companyId: $companyId);
+        if (!$quota['allowed']) {
+            return back()->withInput()->withErrors([
+                'first_name' => $quota['message'],
+            ])->with('danger', $quota['message']);
+        }
+
         // 1. Check Central Cross-Company Blacklist
         $blacklistCheck = $this->blacklistService->checkIdentity($validated);
         if ($blacklistCheck['is_blocked']) {

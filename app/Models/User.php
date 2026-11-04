@@ -45,6 +45,11 @@ class User extends Authenticatable
         return $this->belongsTo(Company::class);
     }
 
+    public function tenant(): ?Tenant
+    {
+        return $this->company?->tenant;
+    }
+
     public function notifications()
     {
         return $this->morphMany(HrmsNotification::class, 'notifiable')->latest();

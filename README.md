@@ -4,9 +4,13 @@
 [![Framework](https://img.shields.io/badge/Laravel-13-FF2D20?style=flat-square&logo=laravel)](https://laravel.com)
 [![Database](https://img.shields.io/badge/MySQL-8.0%20%2F%208.4%20LTS-4479A1?style=flat-square&logo=mysql)](https://mysql.com)
 [![Frontend](https://img.shields.io/badge/Bootstrap-5.3-7952B3?style=flat-square&logo=bootstrap)](https://getbootstrap.com)
-[![Tests](https://img.shields.io/badge/Tests-Passing%20(100%25)-12B76A?style=flat-square)](#10-testing--automated-verification)
+[![Tests](https://img.shields.io/badge/Tests-Passing%20(100%25)-12B76A?style=flat-square)](#9-testing--automated-verification)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Active%20(Cloudflare)-00C7B7?style=flat-square&logo=cloudflare)](https://infringement-affair-delivery-welcome.trycloudflare.com)
 
 A modern, high-availability, multi-company Human Resource Management System (HRMS) & Workforce Intelligence platform engineered for manufacturing, industrial, and distributed enterprise operations. Built on **Laravel 13**, **MySQL 8 (8.0.46 / 8.4 LTS)**, **Blade**, **Bootstrap 5.3**, and **Vanilla JavaScript**.
+
+> [!TIP]
+> **🚀 Live Public Demo Active**: Access the live system at **[https://infringement-affair-delivery-welcome.trycloudflare.com](https://infringement-affair-delivery-welcome.trycloudflare.com)**. See [Section 7: Live Demo Access & Role-Based Credentials](#7-live-demo-access--role-based-credentials) below for instant login details across all 5 user roles.
 
 ---
 
@@ -216,18 +220,70 @@ Access the application at: **`http://127.0.0.1:8000`**
 
 ---
 
-## 7. Role-Based Demo Accounts (Local Dev Only)
+## 7. Live Demo Access & Role-Based Credentials
 
-In local development and testing environments, the following demo personas are seeded:
+A live evaluation environment is currently active and accessible via an encrypted Cloudflare Tunnel. Both the central **SaaS Platform Portal** (for global tenant & subscription administration) and the **Tenant Organization Portal** (for day-to-day HR, managerial, and employee operations) are fully functional.
 
-| Role Code | Role Name | Purpose | Example Identifier |
-|---|---|---|---|
-| `ho_admin` | Head Office Admin | Multi-company governance, system configuration, audit logs | `ho_admin@enterprise.com` |
-| `hr_executive` | HR Operations | Workforce onboarding, attendance, leaves, payroll | `hr@vishal.com` |
-| `manager_mss` | Manager Self-Service | Team presence, leave approvals (strictly zero salary view) | `manager@vishal.com` |
-| `employee_ess` | Employee Self-Service | Personal attendance, leaves, payslips, document locker | `employee@vishal.com` |
+### 7.1 Live Demo URL
 
-> *Default local password for all seeded accounts is: `password` (change immediately in non-local environments).*
+* **Public Web Address**: [https://infringement-affair-delivery-welcome.trycloudflare.com](https://infringement-affair-delivery-welcome.trycloudflare.com)
+* **⚡ 1-Click Fast Login (Platform Super Admin)**: [https://infringement-affair-delivery-welcome.trycloudflare.com/platform/fast-login](https://infringement-affair-delivery-welcome.trycloudflare.com/platform/fast-login)
+* **Local Development Mirror**: [http://127.0.0.1:8000](http://127.0.0.1:8000) (when running `php artisan serve`)
+
+---
+
+### 7.2 Demo Credentials Directory
+
+The table below outlines the 5 pre-configured demo personas representing each operational tier of the system:
+
+| Role / Persona | Portal | Login URL | Email / Username | Password | Purpose & Capabilities |
+|---|---|---|---|---|---|
+| **SaaS Platform Super Admin** | Platform Portal | [`/platform/fast-login` (1-Click)](https://infringement-affair-delivery-welcome.trycloudflare.com/platform/fast-login) \| [`/platform/login`](https://infringement-affair-delivery-welcome.trycloudflare.com/platform/login) | `superadmin@advaititsolutions.com` | `AdvaitPlatform@2026#Secure` | Global tenant management, plan provisioning, subscriptions, license keys, tenant module locks, system audit logs |
+| **Tenant Super Admin** *(HO Admin)* | Tenant Portal | [`/login`](https://infringement-affair-delivery-welcome.trycloudflare.com/login) | `ho_admin@enterprise.com` | `password` | Multi-company governance, legal entity switching (`VE` vs `VRE`), master data setup, subscription & billing overview |
+| **HR Executive** | Tenant Portal | [`/login`](https://infringement-affair-delivery-welcome.trycloudflare.com/login) | `hr@vishal.com` | `password` | Candidate onboarding, eKYC verification, attendance muster, leave ledger, payroll execution & payslips |
+| **Manager** *(MSS)* | Tenant Portal | [`/login`](https://infringement-affair-delivery-welcome.trycloudflare.com/login) | `manager@vishal.com` | `password` | Department team attendance, shift roster adjustments, leave approvals *(Page 94: strictly zero salary view)* |
+| **Staff Employee** *(ESS)* | Tenant Portal | [`/login`](https://infringement-affair-delivery-welcome.trycloudflare.com/login) | `employee@vishal.com` | `password` | Self-service punch logs, leave applications, personal payslips, asset custody, document locker |
+
+---
+
+### 7.3 Step-by-Step Login Instructions
+
+#### Option A: Accessing the SaaS Platform Super Admin Portal
+1. **Instant 1-Click Access**: Open **`https://infringement-affair-delivery-welcome.trycloudflare.com/platform/fast-login`** (authenticates immediately without typing passwords).
+2. **Standard Portal Form**: Navigate to: **`https://infringement-affair-delivery-welcome.trycloudflare.com/platform/login`**
+3. Enter the Platform Super Admin email: `superadmin@advaititsolutions.com`
+4. Enter the secure Platform password: `AdvaitPlatform@2026#Secure` (or click "Auto-fill fields").
+5. Click **Sign In to Platform**.
+6. Access the central SaaS control tower to review all onboarded tenants (`Vishal Group`), active subscription tiers, license renewals, and platform audit logs.
+
+#### Option B: Accessing the Tenant Organization Portals (HO Admin, HR, Manager, Employee)
+1. Navigate to: **`https://infringement-affair-delivery-welcome.trycloudflare.com/login`** (or root URL `/` which redirects automatically).
+2. Choose one of the role-based emails:
+   - For Head Office Administration: `ho_admin@enterprise.com`
+   - For HR Operations: `hr@vishal.com`
+   - For Manager Self-Service: `manager@vishal.com`
+   - For Staff Employee Self-Service: `employee@vishal.com`
+3. Enter the standard tenant demo password: `password`
+4. Click **Sign In**.
+5. Explore the respective role dashboard, test company-context switching (`Vishal Enterprise` ↔ `Vrishal Eng. Pvt. Ltd.`), and experience role-based access boundaries.
+
+---
+
+### 7.4 Demo Environment Notes & Limitations
+
+* **Cloudflare Quick Tunnel**: The public demo is served through a secure, ephemeral Cloudflare Quick Tunnel (`trycloudflare.com`). Tunnel endpoints may change upon service restart.
+* **Database State & Re-Seeding**: The demo environment is populated with the default seeded tenant (`Vishal Group`), covering two legal entities (`Vishal Enterprise` - ID: 1, `Vrishal Eng. Pvt. Ltd.` - ID: 2). Test data created during demo sessions may be periodically re-seeded.
+* **Email & SMS Notifications**: External notification gateways (SMTP/SMS) are configured with mock log drivers (`log`) in the demo environment to prevent unsolicited outbound messages. Generated verification codes or emails appear in standard application logs.
+* **Document Verification**: Public verification of generated letters and forms is available at `/verify-document/{code}` using QR codes or hashes generated during candidate onboarding.
+
+---
+
+### 7.5 Security Disclaimer & Data Protection
+
+> [!CAUTION]
+> **Synthetic Sample Data Notice**: All personnel names, Aadhaar numbers, PAN references, bank account numbers, salary figures, and biometric punch sequences in this demonstration instance are **entirely synthetic mock data** generated for demonstration, testing, and quality assurance. No real-world personal or proprietary data is stored in this sandbox.
+> 
+> The demo credentials listed above are intended **strictly for testing and evaluation purposes**. In production deployments, default credentials are decommissioned, passwords must meet enterprise complexity standards, and multi-factor authentication (MFA) must be enforced.
 
 ---
 
