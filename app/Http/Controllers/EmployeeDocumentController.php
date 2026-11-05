@@ -29,7 +29,9 @@ class EmployeeDocumentController extends Controller
 
         $validated = $request->validate([
             'document_type' => ['required', 'string', 'max:100'],
+            'document_category' => ['nullable', 'string', 'max:100'],
             'document_number' => ['nullable', 'string', 'max:100'],
+            'expiry_date' => ['nullable', 'date'],
             'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'], // Max 5MB
             'remarks' => ['nullable', 'string'],
         ], [
@@ -55,6 +57,8 @@ class EmployeeDocumentController extends Controller
                 ->where('document_type', $validated['document_type'])
                 ->first();
 
+            $docCategory = $validated['document_category'] ?? $this->determineCategory($validated['document_type']);
+
             if ($doc) {
                 $newVersion = $doc->version + 1;
                 $doc->update([
@@ -62,6 +66,9 @@ class EmployeeDocumentController extends Controller
                     'original_name' => $originalName,
                     'file_size_kb' => $fileSizeKb,
                     'mime_type' => $mimeType,
+                    'document_category' => $docCategory,
+                    'expiry_date' => $validated['expiry_date'] ?? null,
+                    'remarks' => $validated['remarks'] ?? null,
                     'version' => $newVersion,
                     'verification_status' => 'Pending',
                     'rejection_reason' => null,
@@ -74,10 +81,13 @@ class EmployeeDocumentController extends Controller
                 $doc = EmployeeDocument::create([
                     'employee_id' => $employee->id,
                     'document_type' => $validated['document_type'],
+                    'document_category' => $docCategory,
                     'file_path' => $path,
                     'original_name' => $originalName,
                     'file_size_kb' => $fileSizeKb,
                     'mime_type' => $mimeType,
+                    'expiry_date' => $validated['expiry_date'] ?? null,
+                    'remarks' => $validated['remarks'] ?? null,
                     'version' => 1,
                     'verification_status' => 'Pending',
                     'uploaded_by' => $user->id,
@@ -189,6 +199,12 @@ class EmployeeDocumentController extends Controller
             return;
         }
 
+        // Employee viewing/downloading their own document
+        $userEmp = $user->employee();
+        if ($userEmp && $userEmp->id === $document->employee_id) {
+            return;
+        }
+
         // Active company boundary check
         $activeCompanyId = $this->companyContext->getActiveCompanyId();
         if ($document->company_id !== $activeCompanyId) {
@@ -201,5 +217,26 @@ class EmployeeDocumentController extends Controller
         }
 
         abort(403, 'Unauthorized access to employee document.');
+    }
+
+    protected function determineCategory(string $type): string
+    {
+        $lower = strtolower($type);
+        if (str_contains($lower, 'degree') || str_contains($lower, 'qualification') || str_contains($lower, 'marksheet') || str_contains($lower, 'education') || str_contains($lower, 'certificate')) {
+            return 'Educational';
+        }
+        if (str_contains($lower, 'passport') || str_contains($lower, 'visa') || str_contains($lower, 'permit')) {
+            return 'Visa & Immigration';
+        }
+        if (str_contains($lower, 'health') || str_contains($lower, 'medical') || str_contains($lower, 'checkup')) {
+            return 'Health';
+        }
+        if (str_contains($lower, 'agreement') || str_contains($lower, 'contract') || str_contains($lower, 'offer') || str_contains($lower, 'relieving') || str_contains($lower, 'experience')) {
+            return 'Employment';
+        }
+        if (str_contains($lower, 'bank') || str_contains($lower, 'passbook') || str_contains($lower, 'cheque')) {
+            return 'Banking';
+        }
+        return 'Identity';
     }
 }

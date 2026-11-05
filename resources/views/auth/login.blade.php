@@ -783,7 +783,7 @@
                                 </span>
                                 <span class="text-white fw-bold">Platform Super Admin</span>
                             </div>
-                            <span class="quick-role-email text-white-50" style="font-size: 10.5px;">superadmin@advaititsolutions.com &rarr;</span>
+                            <span class="quick-role-email text-white-50" style="font-size: 10.5px;">ajay@kanvtech.com &rarr;</span>
                         </a>
 
                         <button type="button" class="quick-role-card active-role" onclick="setCreds('ho_admin@enterprise.com', 'password', this)">

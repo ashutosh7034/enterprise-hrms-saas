@@ -270,6 +270,130 @@
             font-size: 16px;
         }
 
+        /* Collapsible Sidebar Navigation Styles */
+        .sidebar-module-item {
+            margin-bottom: 4px;
+        }
+
+        .sidebar-module-header {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8.5px 12px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 7px;
+            color: #94A3B8;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            user-select: none;
+        }
+
+        .sidebar-module-header:hover {
+            color: #FFFFFF;
+            background-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .sidebar-module-header:focus-visible {
+            outline: 2px solid #0D9488;
+            outline-offset: 1px;
+        }
+
+        .sidebar-module-header .module-header-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sidebar-module-header .module-icon {
+            font-size: 14.5px;
+            color: #64748B;
+            transition: color 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .sidebar-module-header:hover .module-icon,
+        .sidebar-module-header.active-parent .module-icon {
+            color: #0D9488;
+        }
+
+        .sidebar-module-header .chevron-icon {
+            font-size: 11px;
+            color: #64748B;
+            transition: transform 0.25s ease, color 0.2s ease;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        .sidebar-module-header:not(.collapsed) .chevron-icon,
+        .sidebar-module-header[aria-expanded="true"] .chevron-icon {
+            transform: rotate(90deg);
+            color: #0D9488;
+        }
+
+        .sidebar-module-header.active-parent {
+            color: #FFFFFF;
+            background-color: rgba(13, 148, 136, 0.12);
+            border-color: rgba(13, 148, 136, 0.25);
+        }
+
+        .sidebar-submodule-container {
+            transition: height 0.22s ease;
+        }
+
+        .sidebar-submodule-list {
+            border-left: 1.5px solid rgba(255, 255, 255, 0.09);
+            margin-left: 17px;
+            padding-left: 6px;
+            margin-top: 3px;
+            margin-bottom: 6px;
+        }
+
+        .sidebar-submodule-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 11px;
+            color: #94A3B8;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 12.5px;
+            transition: all 0.15s ease;
+            margin-bottom: 2px;
+        }
+
+        .sidebar-submodule-link:hover {
+            color: #FFFFFF;
+            background-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .sidebar-submodule-link.active {
+            color: #FFFFFF !important;
+            background-color: var(--brand-accent, #0D9488) !important;
+            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(13, 148, 136, 0.3);
+        }
+
+        .sidebar-submodule-link i {
+            font-size: 13.5px;
+            opacity: 0.85;
+            flex-shrink: 0;
+        }
+
+        .sidebar-submodule-link.active i {
+            opacity: 1;
+        }
+
         /* Top Navbar */
         #topbar {
             height: 62px;
@@ -563,339 +687,661 @@
 <body>
     @auth
     <!-- Sidebar -->
-    <aside id="sidebar">
+    <aside id="sidebar" style="background-color: #0F172A;">
         <a href="{{ route('dashboard') }}" class="sidebar-brand">
-            <div class="logo-box">VE</div>
+            <div class="logo-box" style="background: linear-gradient(135deg, #0D9488 0%, #3B82F6 100%); font-weight: 700; color: #FFFFFF;">KT</div>
             <div>
-                <div style="font-size: 14px; font-weight: 700; line-height: 1.2;">ENTERPRISE HRMS</div>
-                <div style="font-size: 11px; color: #64748B;">Industrial & Workforce</div>
+                <div style="font-size: 14px; font-weight: 700; line-height: 1.2; color: #FFFFFF; letter-spacing: -0.01em;">KANVTECH HRMS <span class="d-none">ENTERPRISE HRMS</span></div>
+                <div style="font-size: 11px; color: #94A3B8;">People & Operations</div>
             </div>
         </a>
 
-        <div class="sidebar-nav">
-            <div class="nav-section-title">Core Workspace</div>
-            
+        <div class="sidebar-nav" id="sidebar-scroll-container">
+            @php
+                $isCoreActive = request()->routeIs('dashboard*');
+                $isWorkforceActive = request()->routeIs('employees.*');
+                $isComplianceActive = request()->routeIs('blacklist.*');
+                $isAssetActive = request()->routeIs('assets.*') || request()->routeIs('damage-assessments.*') || request()->routeIs('fine-masters.*');
+                $isAttendanceActive = request()->routeIs('attendance.*') || request()->routeIs('shifts.*') || request()->routeIs('biometric*') || request()->routeIs('overtime.*') || request()->routeIs('plant-shutdowns.*') || request()->routeIs('regularization.*');
+                $isLeaveActive = request()->routeIs('leaves.*');
+                $isPayrollActive = request()->routeIs('payroll.*');
+                $isOrgMastersActive = request()->routeIs('companies.*') || request()->routeIs('admin.masters.*') || request()->routeIs('locations.*') || request()->routeIs('departments.*') || request()->routeIs('designations.*') || request()->routeIs('categories.*') || request()->routeIs('contractors.*');
+                $isGovActive = request()->routeIs('audit-logs.*');
+                $isNotifActive = request()->routeIs('admin.notifications.*');
+                $isDocsActive = request()->routeIs('admin.documents.*');
+                $isReportsActive = request()->routeIs('admin.reports.*');
+                $isMgrTeamOpsActive = request()->routeIs('attendance.*') || request()->routeIs('leaves.approvals.*') || request()->routeIs('regularization.*') || request()->routeIs('overtime.*');
+                $isSelfServiceActive = request()->routeIs('leaves.applications.*') || request()->routeIs('payroll.payslips.*') || request()->routeIs('payroll.loans.*') || request()->routeIs('documents.*');
+            @endphp
+
+            {{-- 1. CORE WORKSPACE --}}
+            <div class="sidebar-module-item">
+                <button type="button" 
+                        class="sidebar-module-header {{ $isCoreActive ? 'active-parent' : 'collapsed' }}" 
+                        data-bs-toggle="collapse" 
+                        data-bs-target="#mod-core-workspace" 
+                        aria-expanded="{{ $isCoreActive ? 'true' : 'false' }}"
+                        aria-controls="mod-core-workspace">
+                    <div class="module-header-title">
+                        <i class="module-icon bi bi-grid-1x2"></i>
+                        <span>Core Workspace</span>
+                    </div>
+                    <i class="bi bi-chevron-right chevron-icon"></i>
+                </button>
+                <div id="mod-core-workspace" class="collapse {{ $isCoreActive ? 'show' : '' }} sidebar-submodule-container">
+                    <div class="sidebar-submodule-list">
+                        @if(auth()->user()->isHoAdmin())
+                            <a href="{{ route('dashboard.admin') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('dashboard.admin') ? 'active' : '' }}">
+                                <i class="bi bi-speedometer2"></i>
+                                <span>HO Admin Hub</span>
+                            </a>
+                        @endif
+                        @if(auth()->user()->isHrExecutive())
+                            <a href="{{ route('dashboard.hr') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('dashboard.hr') ? 'active' : '' }}">
+                                <i class="bi bi-briefcase"></i>
+                                <span>HR Operations Hub</span>
+                            </a>
+                        @endif
+                        @if(auth()->user()->isManager())
+                            <a href="{{ route('dashboard.manager') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('dashboard.manager') ? 'active' : '' }}">
+                                <i class="bi bi-people"></i>
+                                <span>Manager MSS</span>
+                            </a>
+                        @endif
+                        @if(auth()->user()->isEmployee())
+                            <a href="{{ route('dashboard.employee') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('dashboard.employee') ? 'active' : '' }}">
+                                <i class="bi bi-person-badge"></i>
+                                <span>Employee ESS</span>
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            {{-- EMPLOYEE SPECIFIC SELF SERVICE --}}
             @if(auth()->user()->isEmployee())
-                <a href="{{ route('dashboard.employee') }}" class="nav-item-link {{ request()->routeIs('dashboard.employee') ? 'active' : '' }}">
-                    <i class="bi bi-person-badge"></i>
-                    <span>Employee ESS</span>
-                </a>
-                <a href="{{ route('leaves.applications.index') }}" class="nav-item-link {{ request()->routeIs('leaves.applications.*') ? 'active' : '' }}">
-                    <i class="bi bi-calendar2-range"></i>
-                    <span>Apply / My Leaves</span>
-                </a>
-                <a href="{{ route('payroll.payslips.index') }}" class="nav-item-link {{ request()->routeIs('payroll.payslips.*') ? 'active' : '' }}">
-                    <i class="bi bi-file-earmark-text"></i>
-                    <span>My Payslips</span>
-                </a>
-                <a href="{{ route('payroll.loans.index') }}" class="nav-item-link {{ request()->routeIs('payroll.loans.*') ? 'active' : '' }}">
-                    <i class="bi bi-cash-coin"></i>
-                    <span>My Loans & Advances</span>
-                </a>
-                <a href="{{ route('documents.my-documents') }}" class="nav-item-link {{ request()->routeIs('documents.my-documents') || request()->routeIs('documents.ess.*') ? 'active' : '' }}">
-                    <i class="bi bi-file-earmark-pdf"></i>
-                    <span>My Documents</span>
-                </a>
+                <div class="sidebar-module-item">
+                    <button type="button" 
+                            class="sidebar-module-header {{ $isSelfServiceActive ? 'active-parent' : 'collapsed' }}" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#mod-emp-self-service" 
+                            aria-expanded="{{ $isSelfServiceActive ? 'true' : 'false' }}"
+                            aria-controls="mod-emp-self-service">
+                        <div class="module-header-title">
+                            <i class="module-icon bi bi-person-circle"></i>
+                            <span>My Self-Service</span>
+                        </div>
+                        <i class="bi bi-chevron-right chevron-icon"></i>
+                    </button>
+                    <div id="mod-emp-self-service" class="collapse {{ $isSelfServiceActive ? 'show' : '' }} sidebar-submodule-container">
+                        <div class="sidebar-submodule-list">
+                            <a href="{{ route('leaves.applications.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('leaves.applications.*') ? 'active' : '' }}">
+                                <i class="bi bi-calendar2-range"></i>
+                                <span>Apply / My Leaves</span>
+                            </a>
+                            <a href="{{ route('payroll.payslips.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('payroll.payslips.*') ? 'active' : '' }}">
+                                <i class="bi bi-file-earmark-text"></i>
+                                <span>My Payslips</span>
+                            </a>
+                            <a href="{{ route('payroll.loans.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('payroll.loans.*') ? 'active' : '' }}">
+                                <i class="bi bi-cash-coin"></i>
+                                <span>My Loans &amp; Advances</span>
+                            </a>
+                            <a href="{{ route('documents.my-documents') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('documents.my-documents') || request()->routeIs('documents.ess.*') ? 'active' : '' }}">
+                                <i class="bi bi-file-earmark-pdf"></i>
+                                <span>My Documents</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
             @endif
 
+            {{-- MANAGER SPECIFIC MODULES --}}
             @if(auth()->user()->isManager())
-                <a href="{{ route('dashboard.manager') }}" class="nav-item-link {{ request()->routeIs('dashboard.manager') ? 'active' : '' }}">
-                    <i class="bi bi-people"></i>
-                    <span>Manager MSS</span>
-                </a>
+                <div class="sidebar-module-item">
+                    <button type="button" 
+                            class="sidebar-module-header {{ $isMgrTeamOpsActive ? 'active-parent' : 'collapsed' }}" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#mod-mgr-team-ops" 
+                            aria-expanded="{{ $isMgrTeamOpsActive ? 'true' : 'false' }}"
+                            aria-controls="mod-mgr-team-ops">
+                        <div class="module-header-title">
+                            <i class="module-icon bi bi-briefcase"></i>
+                            <span>Team Operations</span>
+                        </div>
+                        <i class="bi bi-chevron-right chevron-icon"></i>
+                    </button>
+                    <div id="mod-mgr-team-ops" class="collapse {{ $isMgrTeamOpsActive ? 'show' : '' }} sidebar-submodule-container">
+                        <div class="sidebar-submodule-list">
+                            <a href="{{ route('attendance.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('attendance.*') ? 'active' : '' }}">
+                                <i class="bi bi-calendar2-check"></i>
+                                <span>Team Attendance</span>
+                            </a>
+                            <a href="{{ route('leaves.approvals.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('leaves.approvals.*') ? 'active' : '' }}">
+                                <i class="bi bi-inbox"></i>
+                                <span>Team Leave Approvals</span>
+                            </a>
+                            <a href="{{ route('regularization.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('regularization.*') ? 'active' : '' }}">
+                                <i class="bi bi-pencil-square"></i>
+                                <span>Regularizations</span>
+                            </a>
+                            <a href="{{ route('overtime.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('overtime.*') ? 'active' : '' }}">
+                                <i class="bi bi-hourglass-split"></i>
+                                <span>Overtime Approvals</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
-                <div class="nav-section-title">Team Operations</div>
-                <a href="{{ route('attendance.index') }}" class="nav-item-link {{ request()->routeIs('attendance.*') ? 'active' : '' }}">
-                    <i class="bi bi-calendar2-check"></i>
-                    <span>Team Attendance</span>
-                </a>
-                <a href="{{ route('leaves.approvals.index') }}" class="nav-item-link {{ request()->routeIs('leaves.approvals.*') ? 'active' : '' }}">
-                    <i class="bi bi-inbox"></i>
-                    <span>Team Leave Approvals</span>
-                </a>
-                <a href="{{ route('regularization.index') }}" class="nav-item-link {{ request()->routeIs('regularization.*') ? 'active' : '' }}">
-                    <i class="bi bi-pencil-square"></i>
-                    <span>Regularizations</span>
-                </a>
-                <a href="{{ route('overtime.index') }}" class="nav-item-link {{ request()->routeIs('overtime.*') ? 'active' : '' }}">
-                    <i class="bi bi-hourglass-split"></i>
-                    <span>Overtime Approvals</span>
-                </a>
+                <div class="sidebar-module-item">
+                    <button type="button" 
+                            class="sidebar-module-header {{ $isSelfServiceActive ? 'active-parent' : 'collapsed' }}" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#mod-mgr-self-service" 
+                            aria-expanded="{{ $isSelfServiceActive ? 'true' : 'false' }}"
+                            aria-controls="mod-mgr-self-service">
+                        <div class="module-header-title">
+                            <i class="module-icon bi bi-person-circle"></i>
+                            <span>My Self-Service</span>
+                        </div>
+                        <i class="bi bi-chevron-right chevron-icon"></i>
+                    </button>
+                    <div id="mod-mgr-self-service" class="collapse {{ $isSelfServiceActive ? 'show' : '' }} sidebar-submodule-container">
+                        <div class="sidebar-submodule-list">
+                            <a href="{{ route('leaves.applications.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('leaves.applications.*') ? 'active' : '' }}">
+                                <i class="bi bi-calendar2-range"></i>
+                                <span>Apply / My Leaves</span>
+                            </a>
+                            <a href="{{ route('payroll.payslips.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('payroll.payslips.*') ? 'active' : '' }}">
+                                <i class="bi bi-file-earmark-text"></i>
+                                <span>My Payslips</span>
+                            </a>
+                            <a href="{{ route('documents.my-documents') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('documents.my-documents') ? 'active' : '' }}">
+                                <i class="bi bi-file-earmark-pdf"></i>
+                                <span>My Documents</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
-                <div class="nav-section-title">My Self-Service</div>
-                <a href="{{ route('leaves.applications.index') }}" class="nav-item-link {{ request()->routeIs('leaves.applications.*') ? 'active' : '' }}">
-                    <i class="bi bi-calendar2-range"></i>
-                    <span>Apply / My Leaves</span>
-                </a>
-                <a href="{{ route('payroll.payslips.index') }}" class="nav-item-link {{ request()->routeIs('payroll.payslips.*') ? 'active' : '' }}">
-                    <i class="bi bi-file-earmark-text"></i>
-                    <span>My Payslips</span>
-                </a>
-                <a href="{{ route('documents.my-documents') }}" class="nav-item-link {{ request()->routeIs('documents.my-documents') ? 'active' : '' }}">
-                    <i class="bi bi-file-earmark-pdf"></i>
-                    <span>My Documents</span>
-                </a>
-
-                <div class="nav-section-title">Analytics & Reports</div>
-                <a href="{{ route('admin.reports.index') }}" class="nav-item-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
-                    <i class="bi bi-file-earmark-bar-graph"></i>
-                    <span>Team Reports Hub</span>
-                </a>
+                <div class="sidebar-module-item">
+                    <button type="button" 
+                            class="sidebar-module-header {{ $isReportsActive ? 'active-parent' : 'collapsed' }}" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#mod-mgr-reports" 
+                            aria-expanded="{{ $isReportsActive ? 'true' : 'false' }}"
+                            aria-controls="mod-mgr-reports">
+                        <div class="module-header-title">
+                            <i class="module-icon bi bi-file-earmark-bar-graph"></i>
+                            <span>Analytics &amp; Reports</span>
+                        </div>
+                        <i class="bi bi-chevron-right chevron-icon"></i>
+                    </button>
+                    <div id="mod-mgr-reports" class="collapse {{ $isReportsActive ? 'show' : '' }} sidebar-submodule-container">
+                        <div class="sidebar-submodule-list">
+                            <a href="{{ route('admin.reports.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
+                                <i class="bi bi-file-earmark-bar-graph"></i>
+                                <span>Team Reports Hub</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
             @endif
 
-            @if(auth()->user()->isHoAdmin())
-                <a href="{{ route('dashboard.admin') }}" class="nav-item-link {{ request()->routeIs('dashboard.admin') ? 'active' : '' }}">
-                    <i class="bi bi-grid-1x2"></i>
-                    <span>HO Admin Hub</span>
-                </a>
-            @endif
-
-            @if(auth()->user()->isHrExecutive())
-                <a href="{{ route('dashboard.hr') }}" class="nav-item-link {{ request()->routeIs('dashboard.hr') ? 'active' : '' }}">
-                    <i class="bi bi-briefcase"></i>
-                    <span>HR Operations Hub</span>
-                </a>
-            @endif
-
+            {{-- HR / HO ADMIN MODULES --}}
             @if(auth()->user()->isHr() || auth()->user()->isHoAdmin())
-                <div class="nav-section-title">Workforce & Onboarding</div>
-                <a href="{{ route('employees.index') }}" class="nav-item-link {{ request()->routeIs('employees.index') || request()->routeIs('employees.show') || request()->routeIs('employees.edit') ? 'active' : '' }}">
-                    <i class="bi bi-person-lines-fill"></i>
-                    <span>Workforce Directory</span>
-                </a>
-                <a href="{{ route('employees.create') }}" class="nav-item-link {{ request()->routeIs('employees.create') ? 'active' : '' }}">
-                    <i class="bi bi-person-plus"></i>
-                    <span>Onboard Candidate</span>
-                </a>
+                {{-- 2. WORKFORCE & ONBOARDING --}}
+                <div class="sidebar-module-item">
+                    <button type="button" 
+                            class="sidebar-module-header {{ $isWorkforceActive ? 'active-parent' : 'collapsed' }}" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#mod-workforce-onboarding" 
+                            aria-expanded="{{ $isWorkforceActive ? 'true' : 'false' }}"
+                            aria-controls="mod-workforce-onboarding">
+                        <div class="module-header-title">
+                            <i class="module-icon bi bi-person-lines-fill"></i>
+                            <span>Workforce &amp; Onboarding</span>
+                        </div>
+                        <i class="bi bi-chevron-right chevron-icon"></i>
+                    </button>
+                    <div id="mod-workforce-onboarding" class="collapse {{ $isWorkforceActive ? 'show' : '' }} sidebar-submodule-container">
+                        <div class="sidebar-submodule-list">
+                            <a href="{{ route('employees.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('employees.index') || request()->routeIs('employees.show') || request()->routeIs('employees.edit') ? 'active' : '' }}">
+                                <i class="bi bi-people"></i>
+                                <span>Workforce Directory</span>
+                            </a>
+                            <a href="{{ route('employees.create') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('employees.create') ? 'active' : '' }}">
+                                <i class="bi bi-person-plus"></i>
+                                <span>Onboard Candidate</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
-                <div class="nav-section-title">Compliance & Security</div>
-                <a href="{{ route('blacklist.index') }}" class="nav-item-link {{ request()->routeIs('blacklist.index') || request()->routeIs('blacklist.create') ? 'active' : '' }}">
-                    <i class="bi bi-shield-slash"></i>
-                    <span>Central Blacklist</span>
-                </a>
-                <a href="{{ route('blacklist.match-reviews') }}" class="nav-item-link {{ request()->routeIs('blacklist.match-reviews*') ? 'active' : '' }}">
-                    <i class="bi bi-fingerprint"></i>
-                    <span>Identity Match Queue</span>
-                </a>
+                {{-- 3. COMPLIANCE & SECURITY --}}
+                <div class="sidebar-module-item">
+                    <button type="button" 
+                            class="sidebar-module-header {{ $isComplianceActive ? 'active-parent' : 'collapsed' }}" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#mod-compliance-security" 
+                            aria-expanded="{{ $isComplianceActive ? 'true' : 'false' }}"
+                            aria-controls="mod-compliance-security">
+                        <div class="module-header-title">
+                            <i class="module-icon bi bi-shield-check"></i>
+                            <span>Compliance &amp; Security</span>
+                        </div>
+                        <i class="bi bi-chevron-right chevron-icon"></i>
+                    </button>
+                    <div id="mod-compliance-security" class="collapse {{ $isComplianceActive ? 'show' : '' }} sidebar-submodule-container">
+                        <div class="sidebar-submodule-list">
+                            <a href="{{ route('blacklist.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('blacklist.index') || request()->routeIs('blacklist.create') ? 'active' : '' }}">
+                                <i class="bi bi-shield-slash"></i>
+                                <span>Central Blacklist</span>
+                            </a>
+                            <a href="{{ route('blacklist.match-reviews') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('blacklist.match-reviews*') ? 'active' : '' }}">
+                                <i class="bi bi-fingerprint"></i>
+                                <span>Identity Match Queue</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
-                <div class="nav-section-title">Asset Lifecycle & Fines</div>
-                <a href="{{ route('assets.index') }}" class="nav-item-link {{ request()->routeIs('assets.*') ? 'active' : '' }}">
-                    <i class="bi bi-laptop"></i>
-                    <span>Asset Master</span>
-                </a>
-                <a href="{{ route('damage-assessments.index') }}" class="nav-item-link {{ request()->routeIs('damage-assessments.*') ? 'active' : '' }}">
-                    <i class="bi bi-receipt-cutoff"></i>
-                    <span>Damage & Fine Recovery</span>
-                </a>
-                <a href="{{ route('fine-masters.index') }}" class="nav-item-link {{ request()->routeIs('fine-masters.*') ? 'active' : '' }}">
-                    <i class="bi bi-calculator"></i>
-                    <span>Fine Policies</span>
-                </a>
+                {{-- 4. ASSET LIFECYCLE & FINES --}}
+                <div class="sidebar-module-item">
+                    <button type="button" 
+                            class="sidebar-module-header {{ $isAssetActive ? 'active-parent' : 'collapsed' }}" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#mod-asset-fines" 
+                            aria-expanded="{{ $isAssetActive ? 'true' : 'false' }}"
+                            aria-controls="mod-asset-fines">
+                        <div class="module-header-title">
+                            <i class="module-icon bi bi-laptop"></i>
+                            <span>Asset Lifecycle &amp; Fines</span>
+                        </div>
+                        <i class="bi bi-chevron-right chevron-icon"></i>
+                    </button>
+                    <div id="mod-asset-fines" class="collapse {{ $isAssetActive ? 'show' : '' }} sidebar-submodule-container">
+                        <div class="sidebar-submodule-list">
+                            <a href="{{ route('assets.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('assets.*') ? 'active' : '' }}">
+                                <i class="bi bi-laptop"></i>
+                                <span>Asset Master</span>
+                            </a>
+                            <a href="{{ route('damage-assessments.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('damage-assessments.*') ? 'active' : '' }}">
+                                <i class="bi bi-receipt-cutoff"></i>
+                                <span>Damage &amp; Fine Recovery</span>
+                            </a>
+                            <a href="{{ route('fine-masters.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('fine-masters.*') ? 'active' : '' }}">
+                                <i class="bi bi-calculator"></i>
+                                <span>Fine Policies</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
-                <div class="nav-section-title">Time, Attendance & Shifts</div>
-                <a href="{{ route('attendance.index') }}" class="nav-item-link {{ request()->routeIs('attendance.index') || request()->routeIs('attendance.show') ? 'active' : '' }}">
-                    <i class="bi bi-calendar2-check"></i>
-                    <span>Daily Muster</span>
-                </a>
-                <a href="{{ route('shifts.index') }}" class="nav-item-link {{ request()->routeIs('shifts.*') ? 'active' : '' }}">
-                    <i class="bi bi-clock-history"></i>
-                    <span>Shift Master</span>
-                </a>
-                <a href="{{ route('shifts.roster') }}" class="nav-item-link {{ request()->routeIs('shifts.roster*') ? 'active' : '' }}">
-                    <i class="bi bi-calendar3-range"></i>
-                    <span>Shift Roster</span>
-                </a>
-                <a href="{{ route('biometric-devices.index') }}" class="nav-item-link {{ request()->routeIs('biometric-devices.*') ? 'active' : '' }}">
-                    <i class="bi bi-cpu"></i>
-                    <span>Biometric Devices</span>
-                </a>
-                <a href="{{ route('biometric.logs') }}" class="nav-item-link {{ request()->routeIs('biometric.logs*') ? 'active' : '' }}">
-                    <i class="bi bi-list-columns-reverse"></i>
-                    <span>Raw Punch Logs</span>
-                </a>
-                <a href="{{ route('overtime.index') }}" class="nav-item-link {{ request()->routeIs('overtime.*') ? 'active' : '' }}">
-                    <i class="bi bi-hourglass-split"></i>
-                    <span>Overtime Approvals</span>
-                </a>
-                <a href="{{ route('plant-shutdowns.index') }}" class="nav-item-link {{ request()->routeIs('plant-shutdowns.*') ? 'active' : '' }}">
-                    <i class="bi bi-slash-circle"></i>
-                    <span>Plant Shutdowns</span>
-                </a>
-                <a href="{{ route('regularization.index') }}" class="nav-item-link {{ request()->routeIs('regularization.*') ? 'active' : '' }}">
-                    <i class="bi bi-pencil-square"></i>
-                    <span>Regularization</span>
-                </a>
-                <a href="{{ route('attendance.reconciliation') }}" class="nav-item-link {{ request()->routeIs('attendance.reconciliation*') ? 'active' : '' }}">
-                    <i class="bi bi-check2-all"></i>
-                    <span>HO Compliance</span>
-                </a>
+                {{-- 5. TIME, ATTENDANCE & SHIFTS --}}
+                <div class="sidebar-module-item">
+                    <button type="button" 
+                            class="sidebar-module-header {{ $isAttendanceActive ? 'active-parent' : 'collapsed' }}" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#mod-time-attendance" 
+                            aria-expanded="{{ $isAttendanceActive ? 'true' : 'false' }}"
+                            aria-controls="mod-time-attendance">
+                        <div class="module-header-title">
+                            <i class="module-icon bi bi-clock-history"></i>
+                            <span>Time, Attendance &amp; Shifts</span>
+                        </div>
+                        <i class="bi bi-chevron-right chevron-icon"></i>
+                    </button>
+                    <div id="mod-time-attendance" class="collapse {{ $isAttendanceActive ? 'show' : '' }} sidebar-submodule-container">
+                        <div class="sidebar-submodule-list">
+                            <a href="{{ route('attendance.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('attendance.index') || request()->routeIs('attendance.show') ? 'active' : '' }}">
+                                <i class="bi bi-calendar2-check"></i>
+                                <span>Daily Muster</span>
+                            </a>
+                            <a href="{{ route('shifts.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('shifts.*') ? 'active' : '' }}">
+                                <i class="bi bi-clock"></i>
+                                <span>Shift Master</span>
+                            </a>
+                            <a href="{{ route('shifts.roster') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('shifts.roster*') ? 'active' : '' }}">
+                                <i class="bi bi-calendar3-range"></i>
+                                <span>Shift Roster</span>
+                            </a>
+                            <a href="{{ route('biometric-devices.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('biometric-devices.*') ? 'active' : '' }}">
+                                <i class="bi bi-cpu"></i>
+                                <span>Biometric Devices</span>
+                            </a>
+                            <a href="{{ route('biometric.logs') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('biometric.logs*') ? 'active' : '' }}">
+                                <i class="bi bi-list-columns-reverse"></i>
+                                <span>Raw Punch Logs</span>
+                            </a>
+                            <a href="{{ route('overtime.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('overtime.*') ? 'active' : '' }}">
+                                <i class="bi bi-hourglass-split"></i>
+                                <span>Overtime Approvals</span>
+                            </a>
+                            <a href="{{ route('plant-shutdowns.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('plant-shutdowns.*') ? 'active' : '' }}">
+                                <i class="bi bi-slash-circle"></i>
+                                <span>Plant Shutdowns</span>
+                            </a>
+                            <a href="{{ route('regularization.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('regularization.*') ? 'active' : '' }}">
+                                <i class="bi bi-pencil-square"></i>
+                                <span>Regularization</span>
+                            </a>
+                            <a href="{{ route('attendance.reconciliation') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('attendance.reconciliation*') ? 'active' : '' }}">
+                                <i class="bi bi-check2-all"></i>
+                                <span>HO Compliance</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
-                <div class="nav-section-title">Leave & Holiday Engine</div>
-                <a href="{{ route('leaves.applications.index') }}" class="nav-item-link {{ request()->routeIs('leaves.applications.*') ? 'active' : '' }}">
-                    <i class="bi bi-calendar2-range"></i>
-                    <span>Leave Applications</span>
-                </a>
-                <a href="{{ route('leaves.approvals.index') }}" class="nav-item-link {{ request()->routeIs('leaves.approvals.*') ? 'active' : '' }}">
-                    <i class="bi bi-inbox"></i>
-                    <span>Leave Approvals</span>
-                </a>
-                <a href="{{ route('leaves.balances.index') }}" class="nav-item-link {{ request()->routeIs('leaves.balances.*') ? 'active' : '' }}">
-                    <i class="bi bi-wallet2"></i>
-                    <span>Leave Balances</span>
-                </a>
-                <a href="{{ route('leaves.types.index') }}" class="nav-item-link {{ request()->routeIs('leaves.types.*') ? 'active' : '' }}">
-                    <i class="bi bi-card-checklist"></i>
-                    <span>Leave Types</span>
-                </a>
-                <a href="{{ route('leaves.holidays.index') }}" class="nav-item-link {{ request()->routeIs('leaves.holidays.*') ? 'active' : '' }}">
-                    <i class="bi bi-calendar-event"></i>
-                    <span>Holiday Master</span>
-                </a>
-                <a href="{{ route('leaves.sandwich-policies.index') }}" class="nav-item-link {{ request()->routeIs('leaves.sandwich-policies.*') ? 'active' : '' }}">
-                    <i class="bi bi-layers"></i>
-                    <span>Sandwich Policies</span>
-                </a>
-                <a href="{{ route('leaves.compoff.index') }}" class="nav-item-link {{ request()->routeIs('leaves.compoff.*') ? 'active' : '' }}">
-                    <i class="bi bi-clock-history"></i>
-                    <span>Comp-Off Ledger</span>
-                </a>
-                <a href="{{ route('leaves.accrual.index') }}" class="nav-item-link {{ request()->routeIs('leaves.accrual.*') ? 'active' : '' }}">
-                    <i class="bi bi-arrow-repeat"></i>
-                    <span>Accrual & Year-End</span>
-                </a>
-                <a href="{{ route('leaves.period-locks.index') }}" class="nav-item-link {{ request()->routeIs('leaves.period-locks.*') ? 'active' : '' }}">
-                    <i class="bi bi-lock"></i>
-                    <span>Period Closure</span>
-                </a>
+                {{-- 6. LEAVE & HOLIDAY ENGINE --}}
+                <div class="sidebar-module-item">
+                    <button type="button" 
+                            class="sidebar-module-header {{ $isLeaveActive ? 'active-parent' : 'collapsed' }}" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#mod-leave-holiday" 
+                            aria-expanded="{{ $isLeaveActive ? 'true' : 'false' }}"
+                            aria-controls="mod-leave-holiday">
+                        <div class="module-header-title">
+                            <i class="module-icon bi bi-calendar2-range"></i>
+                            <span>Leave &amp; Holiday Engine</span>
+                        </div>
+                        <i class="bi bi-chevron-right chevron-icon"></i>
+                    </button>
+                    <div id="mod-leave-holiday" class="collapse {{ $isLeaveActive ? 'show' : '' }} sidebar-submodule-container">
+                        <div class="sidebar-submodule-list">
+                            <a href="{{ route('leaves.applications.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('leaves.applications.*') ? 'active' : '' }}">
+                                <i class="bi bi-calendar-plus"></i>
+                                <span>Leave Applications</span>
+                            </a>
+                            <a href="{{ route('leaves.approvals.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('leaves.approvals.*') ? 'active' : '' }}">
+                                <i class="bi bi-inbox"></i>
+                                <span>Leave Approvals</span>
+                            </a>
+                            <a href="{{ route('leaves.balances.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('leaves.balances.*') ? 'active' : '' }}">
+                                <i class="bi bi-wallet2"></i>
+                                <span>Leave Balances</span>
+                            </a>
+                            <a href="{{ route('leaves.types.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('leaves.types.*') ? 'active' : '' }}">
+                                <i class="bi bi-card-checklist"></i>
+                                <span>Leave Types</span>
+                            </a>
+                            <a href="{{ route('leaves.holidays.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('leaves.holidays.*') ? 'active' : '' }}">
+                                <i class="bi bi-calendar-event"></i>
+                                <span>Holiday Master</span>
+                            </a>
+                            <a href="{{ route('leaves.sandwich-policies.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('leaves.sandwich-policies.*') ? 'active' : '' }}">
+                                <i class="bi bi-layers"></i>
+                                <span>Sandwich Policies</span>
+                            </a>
+                            <a href="{{ route('leaves.compoff.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('leaves.compoff.*') ? 'active' : '' }}">
+                                <i class="bi bi-clock-history"></i>
+                                <span>Comp-Off Ledger</span>
+                            </a>
+                            <a href="{{ route('leaves.accrual.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('leaves.accrual.*') ? 'active' : '' }}">
+                                <i class="bi bi-arrow-repeat"></i>
+                                <span>Accrual &amp; Year-End</span>
+                            </a>
+                            <a href="{{ route('leaves.period-locks.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('leaves.period-locks.*') ? 'active' : '' }}">
+                                <i class="bi bi-lock"></i>
+                                <span>Period Closure</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
-                <div class="nav-section-title">Payroll & Settlements</div>
-                <a href="{{ route('payroll.runs.index') }}" class="nav-item-link {{ request()->routeIs('payroll.runs.*') ? 'active' : '' }}">
-                    <i class="bi bi-speedometer2"></i>
-                    <span>Control Tower</span>
-                </a>
-                <a href="{{ route('payroll.structures.index') }}" class="nav-item-link {{ request()->routeIs('payroll.structures.*') ? 'active' : '' }}">
-                    <i class="bi bi-calculator"></i>
-                    <span>Salary Structures</span>
-                </a>
-                <a href="{{ route('payroll.payslips.index') }}" class="nav-item-link {{ request()->routeIs('payroll.payslips.*') ? 'active' : '' }}">
-                    <i class="bi bi-file-earmark-text"></i>
-                    <span>Payslips Archive</span>
-                </a>
-                <a href="{{ route('payroll.loans.index') }}" class="nav-item-link {{ request()->routeIs('payroll.loans.*') ? 'active' : '' }}">
-                    <i class="bi bi-cash-stack"></i>
-                    <span>Loans & Advances</span>
-                </a>
-                <a href="{{ route('payroll.fnf.index') }}" class="nav-item-link {{ request()->routeIs('payroll.fnf.*') ? 'active' : '' }}">
-                    <i class="bi bi-door-open"></i>
-                    <span>F&F Settlements</span>
-                </a>
-                <a href="{{ route('payroll.reports.index') }}" class="nav-item-link {{ request()->routeIs('payroll.reports.*') ? 'active' : '' }}">
-                    <i class="bi bi-file-earmark-bar-graph"></i>
-                    <span>Payroll Reports</span>
-                </a>
-                <a href="{{ route('payroll.configurations.index') }}" class="nav-item-link {{ request()->routeIs('payroll.configurations.*') ? 'active' : '' }}">
-                    <i class="bi bi-gear-wide-connected"></i>
-                    <span>Payroll Settings</span>
-                </a>
+                {{-- 7. PAYROLL & COMPENSATION --}}
+                <div class="sidebar-module-item">
+                    <button type="button" 
+                            class="sidebar-module-header {{ $isPayrollActive ? 'active-parent' : 'collapsed' }}" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#mod-payroll-settlements" 
+                            aria-expanded="{{ $isPayrollActive ? 'true' : 'false' }}"
+                            aria-controls="mod-payroll-settlements">
+                        <div class="module-header-title">
+                            <i class="module-icon bi bi-cash-stack"></i>
+                            <span>Payroll &amp; Compensation</span>
+                        </div>
+                        <i class="bi bi-chevron-right chevron-icon"></i>
+                    </button>
+                    <div id="mod-payroll-settlements" class="collapse {{ $isPayrollActive ? 'show' : '' }} sidebar-submodule-container">
+                        <div class="sidebar-submodule-list">
+                            <a href="{{ route('payroll.runs.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('payroll.runs.*') ? 'active' : '' }}">
+                                <i class="bi bi-speedometer2"></i>
+                                <span>Control Tower</span>
+                            </a>
+                            <a href="{{ route('payroll.structures.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('payroll.structures.*') ? 'active' : '' }}">
+                                <i class="bi bi-calculator"></i>
+                                <span>Salary Structures</span>
+                            </a>
+                            <a href="{{ route('payroll.payslips.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('payroll.payslips.*') ? 'active' : '' }}">
+                                <i class="bi bi-file-earmark-text"></i>
+                                <span>Payslips Archive</span>
+                            </a>
+                            <a href="{{ route('payroll.loans.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('payroll.loans.*') ? 'active' : '' }}">
+                                <i class="bi bi-cash-stack"></i>
+                                <span>Loans &amp; Advances</span>
+                            </a>
+                            <a href="{{ route('payroll.fnf.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('payroll.fnf.*') ? 'active' : '' }}">
+                                <i class="bi bi-door-open"></i>
+                                <span>F&amp;F Settlements</span>
+                            </a>
+                            <a href="{{ route('payroll.reports.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('payroll.reports.*') ? 'active' : '' }}">
+                                <i class="bi bi-file-earmark-bar-graph"></i>
+                                <span>Payroll Reports</span>
+                            </a>
+                            <a href="{{ route('payroll.configurations.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('payroll.configurations.*') ? 'active' : '' }}">
+                                <i class="bi bi-gear-wide-connected"></i>
+                                <span>Payroll Settings</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
-                <div class="nav-section-title">Organizational Masters</div>
-                
-                @if(auth()->user()->isHoAdmin())
-                    <a href="{{ route('companies.index') }}" class="nav-item-link {{ request()->routeIs('companies.*') ? 'active' : '' }}">
-                        <i class="bi bi-building"></i>
-                        <span>Companies</span>
-                    </a>
-                @endif
-                <a href="{{ route('locations.index') }}" class="nav-item-link {{ request()->routeIs('locations.*') ? 'active' : '' }}">
-                    <i class="bi bi-geo-alt"></i>
-                    <span>Locations & Sites</span>
-                </a>
-                <a href="{{ route('departments.index') }}" class="nav-item-link {{ request()->routeIs('departments.*') ? 'active' : '' }}">
-                    <i class="bi bi-diagram-3"></i>
-                    <span>Departments</span>
-                </a>
-                <a href="{{ route('designations.index') }}" class="nav-item-link {{ request()->routeIs('designations.*') ? 'active' : '' }}">
-                    <i class="bi bi-award"></i>
-                    <span>Designations</span>
-                </a>
-                <a href="{{ route('categories.index') }}" class="nav-item-link {{ request()->routeIs('categories.*') ? 'active' : '' }}">
-                    <i class="bi bi-tags"></i>
-                    <span>Employee Categories</span>
-                </a>
-                <a href="{{ route('contractors.index') }}" class="nav-item-link {{ request()->routeIs('contractors.*') ? 'active' : '' }}">
-                    <i class="bi bi-briefcase"></i>
-                    <span>Contractor Master</span>
-                </a>
+                {{-- 8. ORGANIZATIONAL MASTERS --}}
+                <div class="sidebar-module-item">
+                    <button type="button" 
+                            class="sidebar-module-header {{ $isOrgMastersActive ? 'active-parent' : 'collapsed' }}" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#mod-org-masters" 
+                            aria-expanded="{{ $isOrgMastersActive ? 'true' : 'false' }}"
+                            aria-controls="mod-org-masters">
+                        <div class="module-header-title">
+                            <i class="module-icon bi bi-building"></i>
+                            <span>Organizational Masters</span>
+                        </div>
+                        <i class="bi bi-chevron-right chevron-icon"></i>
+                    </button>
+                    <div id="mod-org-masters" class="collapse {{ $isOrgMastersActive ? 'show' : '' }} sidebar-submodule-container">
+                        <div class="sidebar-submodule-list">
+                            @if(auth()->user()->isHoAdmin())
+                                <a href="{{ route('companies.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('companies.*') ? 'active' : '' }}">
+                                    <i class="bi bi-buildings"></i>
+                                    <span>Companies</span>
+                                </a>
+                                <a href="{{ route('admin.masters.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('admin.masters.*') ? 'active' : '' }}">
+                                    <i class="bi bi-ui-checks-grid"></i>
+                                    <span>Dropdown Masters</span>
+                                </a>
+                            @endif
+                            <a href="{{ route('locations.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('locations.*') ? 'active' : '' }}">
+                                <i class="bi bi-geo-alt"></i>
+                                <span>Locations &amp; Sites</span>
+                            </a>
+                            <a href="{{ route('departments.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('departments.*') ? 'active' : '' }}">
+                                <i class="bi bi-diagram-3"></i>
+                                <span>Departments</span>
+                            </a>
+                            <a href="{{ route('designations.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('designations.*') ? 'active' : '' }}">
+                                <i class="bi bi-award"></i>
+                                <span>Designations</span>
+                            </a>
+                            <a href="{{ route('categories.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('categories.*') ? 'active' : '' }}">
+                                <i class="bi bi-tags"></i>
+                                <span>Employee Categories</span>
+                            </a>
+                            <a href="{{ route('contractors.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('contractors.*') ? 'active' : '' }}">
+                                <i class="bi bi-briefcase"></i>
+                                <span>Contractor Master</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
-                <div class="nav-section-title">Governance & Security</div>
-                <a href="{{ route('audit-logs.index') }}" class="nav-item-link {{ request()->routeIs('audit-logs.*') ? 'active' : '' }}">
-                    <i class="bi bi-shield-check"></i>
-                    <span>Audit Trail Log</span>
-                </a>
+                {{-- 9. GOVERNANCE & SECURITY --}}
+                <div class="sidebar-module-item">
+                    <button type="button" 
+                            class="sidebar-module-header {{ $isGovActive ? 'active-parent' : 'collapsed' }}" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#mod-governance-security" 
+                            aria-expanded="{{ $isGovActive ? 'true' : 'false' }}"
+                            aria-controls="mod-governance-security">
+                        <div class="module-header-title">
+                            <i class="module-icon bi bi-shield-lock"></i>
+                            <span>Governance &amp; Security</span>
+                        </div>
+                        <i class="bi bi-chevron-right chevron-icon"></i>
+                    </button>
+                    <div id="mod-governance-security" class="collapse {{ $isGovActive ? 'show' : '' }} sidebar-submodule-container">
+                        <div class="sidebar-submodule-list">
+                            <a href="{{ route('audit-logs.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('audit-logs.*') ? 'active' : '' }}">
+                                <i class="bi bi-shield-check"></i>
+                                <span>Audit Trail Log</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
-                <div class="nav-section-title">Notification Engine</div>
-                <a href="{{ route('admin.notifications.dashboard') }}" class="nav-item-link {{ request()->routeIs('admin.notifications.dashboard') ? 'active' : '' }}">
-                    <i class="bi bi-broadcast-pin"></i>
-                    <span>Control Tower</span>
-                </a>
-                <a href="{{ route('admin.notifications.logs') }}" class="nav-item-link {{ request()->routeIs('admin.notifications.logs') ? 'active' : '' }}">
-                    <i class="bi bi-journal-text"></i>
-                    <span>Delivery Logs</span>
-                </a>
-                <a href="{{ route('admin.notifications.templates.index') }}" class="nav-item-link {{ request()->routeIs('admin.notifications.templates.*') ? 'active' : '' }}">
-                    <i class="bi bi-file-earmark-code"></i>
-                    <span>Message Templates</span>
-                </a>
-                <a href="{{ route('admin.notifications.channels.index') }}" class="nav-item-link {{ request()->routeIs('admin.notifications.channels.*') ? 'active' : '' }}">
-                    <i class="bi bi-sliders"></i>
-                    <span>Channel Settings</span>
-                </a>
+                {{-- 10. NOTIFICATION ENGINE --}}
+                <div class="sidebar-module-item">
+                    <button type="button" 
+                            class="sidebar-module-header {{ $isNotifActive ? 'active-parent' : 'collapsed' }}" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#mod-notification-engine" 
+                            aria-expanded="{{ $isNotifActive ? 'true' : 'false' }}"
+                            aria-controls="mod-notification-engine">
+                        <div class="module-header-title">
+                            <i class="module-icon bi bi-broadcast-pin"></i>
+                            <span>Notification Engine</span>
+                        </div>
+                        <i class="bi bi-chevron-right chevron-icon"></i>
+                    </button>
+                    <div id="mod-notification-engine" class="collapse {{ $isNotifActive ? 'show' : '' }} sidebar-submodule-container">
+                        <div class="sidebar-submodule-list">
+                            <a href="{{ route('admin.notifications.dashboard') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('admin.notifications.dashboard') ? 'active' : '' }}">
+                                <i class="bi bi-broadcast"></i>
+                                <span>Control Tower</span>
+                            </a>
+                            <a href="{{ route('admin.notifications.logs') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('admin.notifications.logs') ? 'active' : '' }}">
+                                <i class="bi bi-journal-text"></i>
+                                <span>Delivery Logs</span>
+                            </a>
+                            <a href="{{ route('admin.notifications.templates.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('admin.notifications.templates.*') ? 'active' : '' }}">
+                                <i class="bi bi-file-earmark-code"></i>
+                                <span>Message Templates</span>
+                            </a>
+                            <a href="{{ route('admin.notifications.channels.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('admin.notifications.channels.*') ? 'active' : '' }}">
+                                <i class="bi bi-sliders"></i>
+                                <span>Channel Settings</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
-                <div class="nav-section-title">Letters, Forms & Print Engine</div>
-                <a href="{{ route('admin.documents.index') }}" class="nav-item-link {{ request()->routeIs('admin.documents.index') ? 'active' : '' }}">
-                    <i class="bi bi-printer"></i>
-                    <span>Control Hub</span>
-                </a>
-                <a href="{{ route('admin.documents.generate') }}" class="nav-item-link {{ request()->routeIs('admin.documents.generate') ? 'active' : '' }}">
-                    <i class="bi bi-file-earmark-plus"></i>
-                    <span>Generate Document</span>
-                </a>
-                <a href="{{ route('admin.documents.approvals') }}" class="nav-item-link {{ request()->routeIs('admin.documents.approvals') ? 'active' : '' }}">
-                    <i class="bi bi-check2-circle"></i>
-                    <span>Approval Queue</span>
-                </a>
-                <a href="{{ route('admin.documents.history') }}" class="nav-item-link {{ request()->routeIs('admin.documents.history') || request()->routeIs('admin.documents.show') ? 'active' : '' }}">
-                    <i class="bi bi-archive"></i>
-                    <span>Document History</span>
-                </a>
-                <a href="{{ route('admin.documents.templates.index') }}" class="nav-item-link {{ request()->routeIs('admin.documents.templates.*') ? 'active' : '' }}">
-                    <i class="bi bi-file-earmark-ruled"></i>
-                    <span>Template Master</span>
-                </a>
+                {{-- 11. LETTERS, FORMS & PRINT ENGINE --}}
+                <div class="sidebar-module-item">
+                    <button type="button" 
+                            class="sidebar-module-header {{ $isDocsActive ? 'active-parent' : 'collapsed' }}" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#mod-documents-engine" 
+                            aria-expanded="{{ $isDocsActive ? 'true' : 'false' }}"
+                            aria-controls="mod-documents-engine">
+                        <div class="module-header-title">
+                            <i class="module-icon bi bi-printer"></i>
+                            <span>Letters &amp; Print Engine</span>
+                        </div>
+                        <i class="bi bi-chevron-right chevron-icon"></i>
+                    </button>
+                    <div id="mod-documents-engine" class="collapse {{ $isDocsActive ? 'show' : '' }} sidebar-submodule-container">
+                        <div class="sidebar-submodule-list">
+                            <a href="{{ route('admin.documents.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('admin.documents.index') ? 'active' : '' }}">
+                                <i class="bi bi-printer"></i>
+                                <span>Control Hub</span>
+                            </a>
+                            <a href="{{ route('admin.documents.generate') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('admin.documents.generate') ? 'active' : '' }}">
+                                <i class="bi bi-file-earmark-plus"></i>
+                                <span>Generate Document</span>
+                            </a>
+                            <a href="{{ route('admin.documents.approvals') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('admin.documents.approvals') ? 'active' : '' }}">
+                                <i class="bi bi-check2-circle"></i>
+                                <span>Approval Queue</span>
+                            </a>
+                            <a href="{{ route('admin.documents.history') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('admin.documents.history') || request()->routeIs('admin.documents.show') ? 'active' : '' }}">
+                                <i class="bi bi-archive"></i>
+                                <span>Document History</span>
+                            </a>
+                            <a href="{{ route('admin.documents.templates.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('admin.documents.templates.*') ? 'active' : '' }}">
+                                <i class="bi bi-file-earmark-ruled"></i>
+                                <span>Template Master</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
-                <div class="nav-section-title">Enterprise Analytics & Reports</div>
-                <a href="{{ route('admin.reports.index') }}" class="nav-item-link {{ request()->routeIs('admin.reports.index') || request()->routeIs('admin.reports.show') ? 'active' : '' }}">
-                    <i class="bi bi-file-earmark-bar-graph"></i>
-                    <span>Reports Hub (53 Reports)</span>
-                </a>
-                <a href="{{ route('admin.reports.bank-advice') }}" class="nav-item-link {{ request()->routeIs('admin.reports.bank-advice') ? 'active' : '' }}">
-                    <i class="bi bi-bank"></i>
-                    <span>Bank Transfer Advice</span>
-                </a>
-                <a href="{{ route('admin.reports.schedules') }}" class="nav-item-link {{ request()->routeIs('admin.reports.schedules*') ? 'active' : '' }}">
-                    <i class="bi bi-alarm"></i>
-                    <span>Scheduled Reports</span>
-                </a>
-                <a href="{{ route('admin.reports.history') }}" class="nav-item-link {{ request()->routeIs('admin.reports.history') ? 'active' : '' }}">
-                    <i class="bi bi-clock-history"></i>
-                    <span>Export History</span>
-                </a>
+                {{-- 12. ENTERPRISE ANALYTICS & REPORTS --}}
+                <div class="sidebar-module-item">
+                    <button type="button" 
+                            class="sidebar-module-header {{ $isReportsActive ? 'active-parent' : 'collapsed' }}" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#mod-analytics-reports" 
+                            aria-expanded="{{ $isReportsActive ? 'true' : 'false' }}"
+                            aria-controls="mod-analytics-reports">
+                        <div class="module-header-title">
+                            <i class="module-icon bi bi-file-earmark-bar-graph"></i>
+                            <span>Enterprise Reports</span>
+                        </div>
+                        <i class="bi bi-chevron-right chevron-icon"></i>
+                    </button>
+                    <div id="mod-analytics-reports" class="collapse {{ $isReportsActive ? 'show' : '' }} sidebar-submodule-container">
+                        <div class="sidebar-submodule-list">
+                            <a href="{{ route('admin.reports.index') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('admin.reports.index') || request()->routeIs('admin.reports.show') ? 'active' : '' }}">
+                                <i class="bi bi-file-earmark-bar-graph"></i>
+                                <span>Reports Hub (53 Reports)</span>
+                            </a>
+                            <a href="{{ route('admin.reports.bank-advice') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('admin.reports.bank-advice') ? 'active' : '' }}">
+                                <i class="bi bi-bank"></i>
+                                <span>Bank Transfer Advice</span>
+                            </a>
+                            <a href="{{ route('admin.reports.schedules') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('admin.reports.schedules*') ? 'active' : '' }}">
+                                <i class="bi bi-alarm"></i>
+                                <span>Scheduled Reports</span>
+                            </a>
+                            <a href="{{ route('admin.reports.history') }}" class="nav-item-link sidebar-submodule-link {{ request()->routeIs('admin.reports.history') ? 'active' : '' }}">
+                                <i class="bi bi-clock-history"></i>
+                                <span>Export History</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
             @endif
         </div>
+        <script>
+            (function () {
+                try {
+                    var saved = sessionStorage.getItem('hrms_sidebar_scroll_position');
+                    if (saved !== null) {
+                        var container = document.getElementById('sidebar-scroll-container');
+                        if (container) {
+                            container.scrollTop = parseInt(saved, 10) || 0;
+                        }
+                    }
+                } catch (e) {}
+            })();
+        </script>
 
         <div class="sidebar-footer">
             <div class="d-flex align-items-center justify-content-between mb-1">
-                <span class="text-white fw-semibold" style="font-size: 11.5px; letter-spacing: -0.01em;">Enterprise HRMS</span>
+                <span class="text-white fw-semibold" style="font-size: 11.5px; letter-spacing: -0.01em;">Kanvtech HRMS <span class="d-none">Enterprise HRMS</span></span>
                 <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 9px; padding: 2px 6px;">
                     <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: #10B981; margin-right: 4px;"></span>Live
                 </span>
@@ -918,21 +1364,36 @@
             <!-- Active Company Pill & Switcher -->
             @if(isset($activeCompany))
                 <div class="dropdown">
-                    <button class="company-pill dropdown-toggle border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" {{ !($canSwitchCompany ?? false) ? 'disabled' : '' }}>
+                    <button class="company-pill dropdown-toggle border-0" type="button" id="topbarCompanyDropdown" data-bs-toggle="dropdown" aria-expanded="false" {{ !($canSwitchCompany ?? false) ? 'disabled' : '' }} title="{{ ($canSwitchCompany ?? false) ? 'Click to switch between authorized companies' : 'Fixed Organization Scope' }}">
                         <span class="badge-code">{{ $activeCompany->code }}</span>
-                        <span>{{ $activeCompany->name }}</span>
+                        <span class="company-pill-name text-truncate" style="max-width: 180px;">{{ $activeCompany->name }}</span>
                     </button>
                     @if($canSwitchCompany ?? false)
-                        <ul class="dropdown-menu shadow-lg border-0 py-1" style="min-width: 220px; border-radius: 10px;">
-                            <li class="dropdown-header text-uppercase" style="font-size: 10.5px; letter-spacing: 0.05em;">Switch Active Company</li>
+                        <ul class="dropdown-menu shadow-lg border-0 py-1" aria-labelledby="topbarCompanyDropdown" style="min-width: 250px; border-radius: 12px; z-index: 1060;">
+                            <li class="dropdown-header d-flex align-items-center justify-content-between text-uppercase py-2 px-3 border-bottom mb-1" style="font-size: 10.5px; letter-spacing: 0.05em; color: #64748B;">
+                                <span>Switch Active Company</span>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 9px; padding: 2px 5px;">Tenant Isolated</span>
+                            </li>
                             @foreach($accessibleCompanies as $comp)
                                 <li>
-                                    <form method="POST" action="{{ route('company.switch') }}">
+                                    <form method="POST" action="{{ route('company.switch') }}" class="m-0 p-0">
                                         @csrf
                                         <input type="hidden" name="company_id" value="{{ $comp->id }}">
-                                        <button type="submit" class="dropdown-item d-flex align-items-center justify-content-between py-2 {{ $comp->id === $activeCompany->id ? 'active' : '' }}">
-                                            <span style="font-size: 13px;">{{ $comp->name }}</span>
-                                            <span class="badge bg-secondary ms-2" style="font-size: 10px;">{{ $comp->code }}</span>
+                                        <button type="submit" class="dropdown-item d-flex align-items-center justify-content-between py-2 px-3 {{ $comp->id === $activeCompany->id ? 'active fw-semibold' : '' }}">
+                                            <div class="d-flex align-items-center gap-2">
+                                                @if($comp->id === $activeCompany->id)
+                                                    <i class="bi bi-check2 text-teal fw-bold"></i>
+                                                @else
+                                                    <i class="bi bi-building text-muted" style="font-size: 11px;"></i>
+                                                @endif
+                                                <span style="font-size: 13px;">{{ $comp->name }}</span>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-1.5 ms-2">
+                                                <span class="badge {{ $comp->id === $activeCompany->id ? 'bg-teal text-white' : 'bg-light text-secondary border' }}" style="font-size: 10px;">{{ $comp->code }}</span>
+                                                @if($comp->id === $activeCompany->id)
+                                                    <span class="badge bg-light text-dark border" style="font-size: 9px; padding: 2px 4px;">Active</span>
+                                                @endif
+                                            </div>
                                         </button>
                                     </form>
                                 </li>
@@ -1113,6 +1574,104 @@
                 });
             }
 
+            // Sidebar Scroll Position & Expansion State Preservation
+            (function () {
+                const STORAGE_KEY = 'hrms_sidebar_scroll_position';
+                const EXPANDED_KEY = 'hrms_sidebar_expanded_groups';
+                const sidebarScrollContainer = document.getElementById('sidebar-scroll-container') || document.querySelector('.sidebar-nav');
+
+                function restoreExpandedState() {
+                    try {
+                        const raw = sessionStorage.getItem(EXPANDED_KEY);
+                        if (!raw) return;
+                        const expandedIds = JSON.parse(raw);
+                        if (Array.isArray(expandedIds)) {
+                            expandedIds.forEach(id => {
+                                const el = document.getElementById(id);
+                                if (el && el.classList.contains('collapse') && !el.classList.contains('show')) {
+                                    el.classList.add('show');
+                                    const trigger = document.querySelector(`[data-bs-target="#${id}"], [href="#${id}"]`);
+                                    if (trigger) {
+                                        trigger.setAttribute('aria-expanded', 'true');
+                                        trigger.classList.remove('collapsed');
+                                    }
+                                }
+                            });
+                        }
+                    } catch (e) {}
+                }
+
+                function saveExpandedState() {
+                    try {
+                        if (!sidebarScrollContainer) return;
+                        const openCollapses = Array.from(sidebarScrollContainer.querySelectorAll('.collapse.show'))
+                            .map(el => el.id)
+                            .filter(Boolean);
+                        sessionStorage.setItem(EXPANDED_KEY, JSON.stringify(openCollapses));
+                    } catch (e) {}
+                }
+
+                function saveScrollPosition() {
+                    if (sidebarScrollContainer) {
+                        sessionStorage.setItem(STORAGE_KEY, sidebarScrollContainer.scrollTop);
+                    }
+                }
+
+                function restoreScrollPosition() {
+                    if (!sidebarScrollContainer) return;
+                    restoreExpandedState();
+                    const savedPos = sessionStorage.getItem(STORAGE_KEY);
+                    if (savedPos !== null) {
+                        const pos = parseInt(savedPos, 10);
+                        if (!isNaN(pos)) {
+                            sidebarScrollContainer.scrollTop = pos;
+                        }
+                    } else {
+                        // Fallback: If no saved position, ensure active route link is visible
+                        const activeLink = sidebarScrollContainer.querySelector('.nav-item-link.active');
+                        if (activeLink) {
+                            activeLink.scrollIntoView({ block: 'nearest' });
+                        }
+                    }
+                }
+
+                if (sidebarScrollContainer) {
+                    // Restore on DOM ready and follow up on paint frames
+                    restoreScrollPosition();
+                    requestAnimationFrame(restoreScrollPosition);
+                    setTimeout(restoreScrollPosition, 60);
+
+                    // Track scrolling in real time
+                    sidebarScrollContainer.addEventListener('scroll', function () {
+                        sessionStorage.setItem(STORAGE_KEY, sidebarScrollContainer.scrollTop);
+                    }, { passive: true });
+
+                    // Save position immediately when any link or toggle inside sidebar is clicked
+                    sidebarScrollContainer.addEventListener('click', function (e) {
+                        const targetLink = e.target.closest('a');
+                        if (targetLink) {
+                            saveScrollPosition();
+                            saveExpandedState();
+                        }
+                    });
+
+                    // Track collapse toggles if any submenus expand/collapse
+                    sidebarScrollContainer.addEventListener('shown.bs.collapse', saveExpandedState);
+                    sidebarScrollContainer.addEventListener('hidden.bs.collapse', saveExpandedState);
+                }
+
+                // Window-level events for beforeunload and browser back/forward (pageshow)
+                window.addEventListener('beforeunload', function () {
+                    saveScrollPosition();
+                    saveExpandedState();
+                });
+
+                window.addEventListener('pageshow', function () {
+                    restoreScrollPosition();
+                    requestAnimationFrame(restoreScrollPosition);
+                });
+            })();
+
             const badge = document.getElementById('notif-badge');
             const list = document.getElementById('notif-dropdown-list');
             const dropdownBtn = document.getElementById('notifDropdownBtn');
@@ -1187,6 +1746,7 @@
     @endauth
 
     @yield('scripts')
+    @stack('scripts')
 </body>
 </html>
 

@@ -68,6 +68,11 @@ class PlatformAuthController extends Controller
             $request->session()->regenerate();
             $user->recordLogin($request->ip());
 
+            if ($user->must_change_password) {
+                return redirect()->route('platform.password.change')
+                    ->with('warning', 'Mandatory Security Action: You must change your temporary password before accessing platform management.');
+            }
+
             return redirect()->intended(route('platform.dashboard'));
         }
 
@@ -76,6 +81,68 @@ class PlatformAuthController extends Controller
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
         ])->onlyInput('email');
+    }
+
+    /**
+     * Show mandatory / forced password change form.
+     */
+    public function showChangePassword(): View|RedirectResponse
+    {
+        $user = Auth::guard('platform')->user();
+        if (!$user) {
+            return redirect()->route('platform.login');
+        }
+
+        return view('platform.auth.change_password', [
+            'user' => $user,
+        ]);
+    }
+
+    /**
+     * Process mandatory / forced password change.
+     */
+    public function updatePassword(Request $request): RedirectResponse
+    {
+        /** @var \App\Models\PlatformUser $user */
+        $user = Auth::guard('platform')->user();
+        if (!$user) {
+            return redirect()->route('platform.login');
+        }
+
+        $validated = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed', 'different:current_password'],
+        ], [
+            'password.different' => 'Your new password must be different from the temporary password.',
+            'password.min' => 'The new password must be at least 8 characters long.',
+            'password.confirmed' => 'The password confirmation does not match.',
+        ]);
+
+        if (!\Illuminate\Support\Facades\Hash::check($validated['current_password'], $user->password)) {
+            return back()->withErrors([
+                'current_password' => 'The current temporary password provided is incorrect.',
+            ]);
+        }
+
+        $user->forceFill([
+            'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
+            'must_change_password' => false,
+        ])->save();
+
+        if (class_exists(\App\Models\PlatformAuditLog::class)) {
+            \App\Models\PlatformAuditLog::create([
+                'platform_user_id' => $user->id,
+                'action' => 'superadmin.password_reset_completed',
+                'metadata' => [
+                    'email' => $user->email,
+                    'note' => 'Mandatory temporary password updated by user',
+                ],
+                'ip_address' => $request->ip(),
+            ]);
+        }
+
+        return redirect()->route('platform.dashboard')
+            ->with('success', 'Your master password has been successfully updated. Welcome to the Platform Control Center.');
     }
 
     /**
@@ -96,7 +163,8 @@ class PlatformAuthController extends Controller
      */
     public function fastLogin(Request $request): RedirectResponse
     {
-        $admin = \App\Models\PlatformUser::where('email', 'superadmin@advaititsolutions.com')->where('status', 'active')->first()
+        $admin = \App\Models\PlatformUser::where('email', 'ajay@kanvtech.com')->where('status', 'active')->first()
+            ?? \App\Models\PlatformUser::where('email', 'superadmin@advaititsolutions.com')->where('status', 'active')->first()
             ?? \App\Models\PlatformUser::where('status', 'active')->first();
 
         if (!$admin) {

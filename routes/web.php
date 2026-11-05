@@ -45,6 +45,9 @@ use App\Http\Controllers\Admin\NotificationAdminController;
 use App\Http\Controllers\DocumentTemplateController;
 use App\Http\Controllers\DocumentGenerationController;
 use App\Http\Controllers\EmployeeDocumentEssController;
+use App\Http\Controllers\EmployeeSelfServiceProfileController;
+use App\Http\Controllers\EmployeeLifecycleController;
+use App\Http\Controllers\EmployeeCodeConfigurationController;
 use App\Http\Controllers\Document\DocumentVerificationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\Platform\PlatformAuthController;
@@ -64,6 +67,8 @@ Route::prefix('platform')->group(function () {
 
     Route::middleware(['auth:platform', 'platform.active'])->group(function () {
         Route::post('/logout', [PlatformAuthController::class, 'logout'])->name('platform.logout');
+        Route::get('/change-password', [PlatformAuthController::class, 'showChangePassword'])->name('platform.password.change');
+        Route::post('/change-password', [PlatformAuthController::class, 'updatePassword'])->name('platform.password.update');
         Route::get('/dashboard', [PlatformDashboardController::class, 'index'])->name('platform.dashboard');
 
         // Customer Tenant Management (Advait IT Solutions SaaS Platform)
@@ -143,8 +148,8 @@ Route::middleware(['auth:web', 'tenant.active', 'tenant.subscription'])->group(f
     Route::get('documents/{document}/preview', [EmployeeDocumentController::class, 'preview'])->name('documents.preview');
     Route::get('documents/{document}/download', [EmployeeDocumentController::class, 'download'])->name('documents.download');
 
-    // Master Data Management - Legal Companies (HO Admin Only)
-    Route::resource('masters/companies', CompanyController::class)->only(['index', 'store', 'update'])->middleware('role:ho_admin');
+    // Master Data Management - Legal Companies (HO Admin & Super Admin)
+    Route::resource('masters/companies', CompanyController::class)->only(['index', 'store', 'update'])->middleware('role:ho_admin,super_admin');
 
     // HR Operations & Admin Modules (HR Executive & HO Admin)
     Route::middleware('role:hr_executive,ho_admin')->group(function () {
@@ -158,9 +163,39 @@ Route::middleware(['auth:web', 'tenant.active', 'tenant.subscription'])->group(f
             Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
         });
 
-        // Workforce Onboarding & Employee Lifecycle (Phase 2)
+        // Bulk Employee Import Engine
+        Route::get('employees/bulk-import', [\App\Http\Controllers\BulkEmployeeImportController::class, 'index'])->name('employees.bulk-import.index');
+        Route::get('employees/bulk-import/template/{format}', [\App\Http\Controllers\BulkEmployeeImportController::class, 'downloadTemplate'])->name('employees.bulk-import.template');
+        Route::post('employees/bulk-import/validate', [\App\Http\Controllers\BulkEmployeeImportController::class, 'validateFile'])->name('employees.bulk-import.validate');
+        Route::post('employees/bulk-import/confirm', [\App\Http\Controllers\BulkEmployeeImportController::class, 'confirmImport'])->name('employees.bulk-import.confirm');
+        Route::post('employees/bulk-import/export-errors', [\App\Http\Controllers\BulkEmployeeImportController::class, 'exportErrors'])->name('employees.bulk-import.export-errors');
+
+        // Onboarding Drafts & Auto-Save
+        Route::get('employees/drafts', [\App\Http\Controllers\OnboardingDraftController::class, 'index'])->name('employees.drafts.index');
+        Route::post('employees/drafts/auto-save', [\App\Http\Controllers\OnboardingDraftController::class, 'autoSave'])->name('employees.drafts.auto-save');
+        Route::post('employees/drafts/upload-file', [\App\Http\Controllers\OnboardingDraftController::class, 'uploadFile'])->name('employees.drafts.upload-file');
+        Route::post('employees/drafts/remove-file', [\App\Http\Controllers\OnboardingDraftController::class, 'removeFile'])->name('employees.drafts.remove-file');
+        Route::get('employees/drafts/{draftId}', [\App\Http\Controllers\OnboardingDraftController::class, 'show'])->name('employees.drafts.show');
+        Route::delete('employees/drafts/{draftId}', [\App\Http\Controllers\OnboardingDraftController::class, 'destroy'])->name('employees.drafts.destroy');
+
+        // Workforce Onboarding & Employee Lifecycle
+        Route::get('employees/export', [EmployeeLifecycleController::class, 'export'])->name('employees.export');
         Route::resource('employees', EmployeeController::class);
+        Route::post('employees/{employee}/lifecycle/convert', [EmployeeLifecycleController::class, 'convertEmploymentType'])->name('employees.lifecycle.convert');
+        Route::post('employees/{employee}/lifecycle/confirm', [EmployeeLifecycleController::class, 'confirmEmployee'])->name('employees.lifecycle.confirm');
+        Route::post('employees/{employee}/lifecycle/extend-probation', [EmployeeLifecycleController::class, 'extendProbation'])->name('employees.lifecycle.extend-probation');
+        Route::post('employees/{employee}/lifecycle/transfer', [EmployeeLifecycleController::class, 'branchTransfer'])->name('employees.lifecycle.transfer');
+        Route::post('employees/{employee}/lifecycle/update-doj', [EmployeeLifecycleController::class, 'updateDateOfJoining'])->name('employees.lifecycle.update-doj');
         Route::post('employees/{employee}/gate-pass', [EmployeeController::class, 'updateGatePass'])->name('employees.gate-pass.update');
+        Route::post('employees/{employee}/approve', [EmployeeController::class, 'approve'])->name('employees.approve');
+        Route::post('employees/{employee}/request-correction', [EmployeeController::class, 'requestCorrection'])->name('employees.request-correction');
+        Route::post('employees/{employee}/provision-access', [EmployeeController::class, 'provisionAccess'])->name('employees.provision-access');
+        Route::post('employees/{employee}/family', [EmployeeController::class, 'addFamilyMember'])->name('employees.family.add');
+        Route::delete('employees/{employee}/family/{familyMember}', [EmployeeController::class, 'deleteFamilyMember'])->name('employees.family.delete');
+        Route::post('employees/{employee}/education', [EmployeeController::class, 'addEducation'])->name('employees.education.add');
+        Route::delete('employees/{employee}/education/{education}', [EmployeeController::class, 'deleteEducation'])->name('employees.education.delete');
+        Route::post('employees/{employee}/skills', [EmployeeController::class, 'addSkill'])->name('employees.skills.add');
+        Route::delete('employees/{employee}/skills/{skill}', [EmployeeController::class, 'deleteSkill'])->name('employees.skills.delete');
         Route::post('employees/{employee}/documents', [EmployeeDocumentController::class, 'store'])->name('documents.store');
         Route::post('documents/{document}/verify', [EmployeeDocumentController::class, 'verify'])->name('documents.verify');
 
@@ -410,6 +445,14 @@ Route::middleware(['auth:web', 'tenant.active', 'tenant.subscription'])->group(f
         Route::get('{document}/download', [EmployeeDocumentEssController::class, 'downloadPdf'])->name('download');
     });
 
+    // Employee Self-Service (ESS) Profile Hub
+    Route::prefix('ess/profile')->name('ess.profile.')->group(function () {
+        Route::get('/', [EmployeeSelfServiceProfileController::class, 'show'])->name('show');
+        Route::get('/edit', [EmployeeSelfServiceProfileController::class, 'edit'])->name('edit');
+        Route::put('/', [EmployeeSelfServiceProfileController::class, 'update'])->name('update');
+        Route::post('/submit', [EmployeeSelfServiceProfileController::class, 'submitForReview'])->name('submit');
+    });
+
     // Administrative Document Engine & Template Master (HO Admin & HR Executive - Entitlement Enforced)
     Route::middleware(['role:ho_admin,hr_executive', 'entitled:document_management'])->prefix('admin/documents')->name('admin.documents.')->group(function () {
         // Document Template Master
@@ -433,6 +476,25 @@ Route::middleware(['auth:web', 'tenant.active', 'tenant.subscription'])->group(f
         Route::get('history', [DocumentGenerationController::class, 'history'])->name('history');
         Route::get('{document}/download', [DocumentGenerationController::class, 'downloadPdf'])->name('download');
         Route::get('{document}', [DocumentGenerationController::class, 'show'])->name('show');
+    });
+
+    // Centralized Dropdown Master Management (HO Admin, Super Admin, Company Admin, Branch Admin)
+    Route::middleware('role:ho_admin,super_admin,company_admin,branch_admin')->prefix('admin/masters')->name('admin.masters.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\DropdownMasterController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\DropdownMasterController::class, 'store'])->name('store');
+        Route::put('{master}', [\App\Http\Controllers\DropdownMasterController::class, 'update'])->name('update');
+        Route::patch('{master}/toggle-status', [\App\Http\Controllers\DropdownMasterController::class, 'toggleStatus'])->name('toggle-status');
+        Route::get('dependent-options', [\App\Http\Controllers\DropdownMasterController::class, 'dependentOptions'])->name('dependent-options');
+    });
+
+    // Administrative HR Configuration & Employee Code Management (HO Admin & HR Executive)
+    Route::middleware('role:ho_admin,hr_executive')->prefix('admin/hr-configuration/employee-codes')->name('admin.employee-codes.')->group(function () {
+        Route::get('/', [EmployeeCodeConfigurationController::class, 'settings'])->name('index');
+        Route::get('settings', [EmployeeCodeConfigurationController::class, 'settings'])->name('settings');
+        Route::post('/', [EmployeeCodeConfigurationController::class, 'update'])->name('update');
+        Route::post('preview', [EmployeeCodeConfigurationController::class, 'preview'])->name('preview');
+        Route::get('master', [EmployeeCodeConfigurationController::class, 'master'])->name('master');
+        Route::get('export', [EmployeeCodeConfigurationController::class, 'exportMaster'])->name('export');
     });
 
     // ==========================================

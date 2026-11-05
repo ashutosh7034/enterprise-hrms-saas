@@ -16,6 +16,7 @@ class PlatformUser extends Authenticatable
         'name',
         'email',
         'password',
+        'must_change_password',
         'status',
         'last_login_at',
         'last_login_ip',
@@ -30,6 +31,7 @@ class PlatformUser extends Authenticatable
     {
         return [
             'password' => 'hashed',
+            'must_change_password' => 'boolean',
             'last_login_at' => 'datetime',
         ];
     }

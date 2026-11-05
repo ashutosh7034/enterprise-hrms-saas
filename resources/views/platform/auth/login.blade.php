@@ -221,7 +221,7 @@
                         <i class="bi bi-arrow-right-short fs-4 text-white"></i>
                     </a>
                     <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top text-muted" style="font-size: 11px;">
-                        <span class="font-monospace">superadmin@advaititsolutions.com</span>
+                        <span class="font-monospace">ajay@kanvtech.com</span>
                         <button type="button" class="btn btn-link p-0 text-decoration-none text-primary" style="font-size: 11px;" onclick="fillCreds()">
                             Auto-fill fields &darr;
                         </button>
@@ -241,10 +241,10 @@
                                    class="form-control border-start-0 @error('email') is-invalid @enderror" 
                                    id="email" 
                                    name="email" 
-                                   value="{{ old('email', 'superadmin@advaititsolutions.com') }}" 
+                                   value="{{ old('email', 'ajay@kanvtech.com') }}" 
                                    required 
                                    autofocus 
-                                   placeholder="superadmin@advaititsolutions.com"
+                                   placeholder="ajay@kanvtech.com"
                                    style="font-size: 13.5px; border-color: #CBD5E1;">
                         </div>
                     </div>
@@ -300,8 +300,8 @@
         function fillCreds() {
             var emailEl = document.getElementById('email');
             var passEl = document.getElementById('password');
-            if (emailEl) emailEl.value = 'superadmin@advaititsolutions.com';
-            if (passEl) passEl.value = 'AdvaitPlatform@2026#Secure';
+            if (emailEl) emailEl.value = 'ajay@kanvtech.com';
+            if (passEl) passEl.value = '';
         }
     </script>
 </body>

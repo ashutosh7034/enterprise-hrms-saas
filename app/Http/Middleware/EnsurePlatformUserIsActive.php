@@ -28,6 +28,21 @@ class EnsurePlatformUserIsActive
                     'email' => 'Your platform administrator account is deactivated. Please contact systems support.',
                 ]);
             }
+
+            // Enforce mandatory password change if flagged on the platform user account
+            if ($user->must_change_password) {
+                $exemptRouteNames = [
+                    'platform.password.change',
+                    'platform.password.update',
+                    'platform.logout',
+                ];
+
+                $currentRouteName = $request->route()?->getName();
+                if (!in_array($currentRouteName, $exemptRouteNames)) {
+                    return redirect()->route('platform.password.change')
+                        ->with('warning', 'Mandatory Security Action: You must change your temporary password before accessing platform management.');
+                }
+            }
         }
 
         return $next($request);

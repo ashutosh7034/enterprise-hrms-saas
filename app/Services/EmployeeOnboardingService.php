@@ -12,23 +12,11 @@ use InvalidArgumentException;
 class EmployeeOnboardingService
 {
     /**
-     * Generate next sequential Employee ID based on company code.
+     * Generate next sequential Employee ID based on company code and active configuration.
      */
-    public function generateEmployeeCode(int $companyId, string $companyCode): string
+    public function generateEmployeeCode(int $companyId, string $companyCode, ?int $locationId = null, ?int $departmentId = null): string
     {
-        $lastCode = Employee::withoutGlobalScopes()
-            ->where('company_id', $companyId)
-            ->where('employee_code', 'like', "{$companyCode}-EMP-%")
-            ->orderBy('id', 'desc')
-            ->value('employee_code');
-
-        if ($lastCode && preg_match('/(\d+)$/', $lastCode, $matches)) {
-            $nextNum = str_pad((int) $matches[1] + 1, 4, '0', STR_PAD_LEFT);
-        } else {
-            $nextNum = '1001';
-        }
-
-        return "{$companyCode}-EMP-{$nextNum}";
+        return app(\App\Services\EmployeeCodeGeneratorService::class)->generateNextCode($companyId, $locationId, $departmentId);
     }
 
     /**
@@ -203,6 +191,10 @@ class EmployeeOnboardingService
         $pan = !empty($data['pan_number']) ? strtoupper(trim($data['pan_number'])) : null;
         $aadhaar = !empty($data['aadhaar_number']) ? $this->hashAadhaar($data['aadhaar_number']) : null;
 
+        if (!$pan && !$aadhaar && (!$phone || strlen($phone) < 10)) {
+            return null;
+        }
+
         return Employee::withoutGlobalScopes()
             ->where('company_id', $companyId)
             ->where(function ($q) use ($phone, $pan, $aadhaar) {
@@ -225,7 +217,7 @@ class EmployeeOnboardingService
     public function onboardCandidate(int $companyId, array $data, ?\App\Models\User $creator = null): Employee
     {
         $company = \App\Models\Company::findOrFail($companyId);
-        $code = $this->generateEmployeeCode($companyId, $company->code);
+        $code = $this->generateEmployeeCode($companyId, $company->code, $data['location_id'] ?? null, $data['department_id'] ?? null);
 
         $aadhaarHash = null;
         $aadhaarMasked = null;
@@ -235,17 +227,29 @@ class EmployeeOnboardingService
         }
 
         return DB::transaction(function () use ($companyId, $code, $data, $aadhaarHash, $aadhaarMasked, $creator) {
+            $empType = $data['employee_type'] ?? $data['employment_type'] ?? 'Permanent';
+            $confirmStatus = $data['confirmation_status'] ?? ($empType === 'Probationary' ? 'On Probation' : ($empType === 'Intern' ? 'Not Applicable' : 'Confirmed'));
+            $initialStatus = $data['initial_employment_status'] ?? ($empType === 'Intern' ? 'Intern' : ($empType === 'Probationary' ? 'Probation' : 'Active'));
+            $codeMethod = (!empty($data['manual_employee_code']) && !empty($data['custom_employee_code'])) ? 'Manual' : 'Automatic';
+            $finalCode = ($codeMethod === 'Manual') ? trim($data['custom_employee_code']) : $code;
+
             $emp = Employee::create([
                 'company_id' => $companyId,
-                'employee_code' => $code,
+                'employee_code' => $finalCode,
+                'code_generation_method' => $codeMethod,
                 'gate_pass_number' => !empty($data['gate_pass_number']) ? trim($data['gate_pass_number']) : null,
                 'employment_channel' => $data['employment_channel'] ?? $data['onboarding_channel'] ?? 'Direct',
                 'contractor_id' => $data['contractor_id'] ?? null,
-                'employee_type' => $data['employee_type'] ?? 'Permanent',
+                'employee_type' => $empType,
+                'initial_employment_status' => $initialStatus,
                 'location_id' => $data['location_id'],
+                'joining_location_id' => $data['location_id'],
                 'department_id' => $data['department_id'],
+                'joining_department_id' => $data['department_id'],
                 'category_id' => $data['category_id'] ?? $data['employee_category_id'],
                 'designation_id' => $data['designation_id'],
+                'joining_designation_id' => $data['designation_id'],
+                'reporting_manager_id' => $data['reporting_manager_id'] ?? null,
                 'first_name' => trim($data['first_name']),
                 'last_name' => trim($data['last_name']),
                 'email' => $data['email'] ?? null,
@@ -253,6 +257,10 @@ class EmployeeOnboardingService
                 'gender' => $data['gender'] ?? 'Male',
                 'date_of_birth' => $data['date_of_birth'],
                 'date_of_joining' => $data['date_of_joining'] ?? $data['joining_date'] ?? now()->toDateString(),
+                'probation_start_date' => $data['probation_start_date'] ?? null,
+                'probation_end_date' => $data['probation_end_date'] ?? null,
+                'confirmation_due_date' => $data['confirmation_due_date'] ?? $data['probation_end_date'] ?? null,
+                'confirmation_status' => $confirmStatus,
                 'aadhaar_hash' => $aadhaarHash,
                 'aadhaar_masked' => $aadhaarMasked,
                 'pan_number' => !empty($data['pan_number']) ? strtoupper(trim($data['pan_number'])) : null,
@@ -260,6 +268,30 @@ class EmployeeOnboardingService
                 'status' => 'Active',
                 'ekyc_status' => 'Pending',
                 'created_by' => $creator?->id,
+            ]);
+
+            // Lifecycle Event: Employee Created
+            \App\Models\EmployeeLifecycleEvent::create([
+                'employee_id' => $emp->id,
+                'company_id' => $companyId,
+                'event_type' => 'Employee Created',
+                'previous_value' => null,
+                'new_value' => [
+                    'employee_code' => $emp->employee_code,
+                    'full_name' => $emp->full_name,
+                    'employment_type' => $emp->employee_type,
+                    'date_of_joining' => $emp->date_of_joining?->format('Y-m-d'),
+                    'location_id' => $emp->location_id,
+                    'department_id' => $emp->department_id,
+                    'designation_id' => $emp->designation_id,
+                    'code_generation_method' => $codeMethod,
+                ],
+                'effective_date' => $emp->date_of_joining?->format('Y-m-d') ?: now()->toDateString(),
+                'reason' => 'Workforce Onboarding',
+                'remarks' => 'New employee profile established in system.',
+                'requested_by' => $creator?->id,
+                'approved_by' => $creator?->id,
+                'approved_at' => now(),
             ]);
 
             // Gate pass history

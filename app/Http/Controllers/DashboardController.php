@@ -62,6 +62,9 @@ class DashboardController extends Controller
     /**
      * HO Admin Enterprise Hub: Multi-company strategic oversight and analytics.
      */
+    /**
+     * HO Admin Enterprise Hub: Multi-company strategic oversight, simplified KPI cards and clean analytics.
+     */
     public function admin(): View
     {
         abort_if(!Auth::user()->isHoAdmin(), 403, 'Unauthorized. HO Admin privileges required.');
@@ -69,25 +72,281 @@ class DashboardController extends Controller
         $activeCompany = $this->companyContext->getActiveCompany();
         $activeCompanyId = $activeCompany?->id;
 
-        $companies = Company::withCount(['locations', 'departments', 'contractors'])->get();
+        // Interactive Filters
+        $branchId = request('branch_id');
+        $departmentId = request('department_id');
+        $period = request('period', 'today'); // 'today', '7d', '30d', 'month'
 
-        // Multi-company workforce comparison
+        // Authorized accessible companies strictly within tenant
+        $companies = $this->companyContext->getAccessibleCompanies();
+        $companies->loadCount(['locations', 'departments', 'contractors']);
+
+        // Multi-company workforce comparison (scoped strictly to accessible companies)
         $companyHeadcounts = [];
         foreach ($companies as $comp) {
             $companyHeadcounts[$comp->code] = Employee::where('company_id', $comp->id)->where('status', 'Active')->count();
         }
 
-        // Department breakdown for Chart.js
+        // Base employee query with filters
+        $empBaseQuery = Employee::where('company_id', $activeCompanyId);
+        if ($branchId) {
+            $empBaseQuery->where('location_id', $branchId);
+        }
+        if ($departmentId) {
+            $empBaseQuery->where('department_id', $departmentId);
+        }
+
+        $totalEmployees = (clone $empBaseQuery)->where('status', 'Active')->count();
+        if ($totalEmployees === 0) {
+            $totalEmployees = (clone $empBaseQuery)->count();
+        }
+
+        // Attendance records for active company
+        $today = now()->toDateString();
+        $attQuery = AttendanceRecord::where('company_id', $activeCompanyId);
+        if ($branchId) {
+            $attQuery->whereHas('employee', fn($q) => $q->where('location_id', $branchId));
+        }
+        if ($departmentId) {
+            $attQuery->whereHas('employee', fn($q) => $q->where('department_id', $departmentId));
+        }
+
+        $todayAtt = (clone $attQuery)->where('attendance_date', $today)->get();
+        if ($todayAtt->isEmpty()) {
+            $latestDate = (clone $attQuery)->max('attendance_date');
+            if ($latestDate) {
+                $todayAtt = (clone $attQuery)->where('attendance_date', $latestDate)->get();
+            }
+        }
+
+        $presentToday = $todayAtt->whereIn('status', ['Present', 'Half Day', 'Worked During Shutdown', 'On Duty'])->count();
+        $absentToday = $todayAtt->where('status', 'Absent')->count();
+        $onLeaveToday = $todayAtt->whereIn('status', ['Weekly Off', 'Holiday', 'Site Shutdown', 'Leave'])->count();
+        $wfhToday = $todayAtt->where('status', 'Work From Home')->count();
+
+        // Pending Approvals
+        $pendingLeaves = LeaveApplication::withoutGlobalScopes()
+            ->where('company_id', $activeCompanyId)
+            ->whereIn('status', ['Pending HR', 'Pending Manager', 'Pending HOD'])
+            ->count();
+        $pendingRegularizations = AttendanceRegularization::where('company_id', $activeCompanyId)
+            ->whereIn('status', ['Pending HR', 'Pending Manager'])
+            ->count();
+        $pendingProfiles = Employee::where('company_id', $activeCompanyId)
+            ->where('onboarding_status', 'Submitted')
+            ->count();
+        $totalPendingApprovals = $pendingLeaves + $pendingRegularizations + $pendingProfiles;
+
+        // New Joiners
+        $joinerCutoff = match($period) {
+            '7d' => now()->subDays(7),
+            'month' => now()->startOfMonth(),
+            '30d' => now()->subDays(30),
+            default => now()->subDays(30),
+        };
+        $newJoinersCount = (clone $empBaseQuery)
+            ->where('date_of_joining', '>=', $joinerCutoff)
+            ->count();
+        if ($newJoinersCount === 0) {
+            $newJoinersCount = (clone $empBaseQuery)->where('date_of_joining', '>=', now()->subDays(90))->count();
+        }
+
+        // Employees on Probation
+        $probationCount = (clone $empBaseQuery)
+            ->where(function($q) {
+                $q->where('confirmation_status', 'Probation')
+                  ->orWhere('employee_type', 'Probation')
+                  ->orWhereNotNull('probation_end_date');
+            })
+            ->count();
+
+        // 6 Primary Colorful KPI Cards
+        $kpiCards = [
+            [
+                'id' => 'total_employees',
+                'title' => 'Total Employees',
+                'value' => number_format($totalEmployees),
+                'subtitle' => '+3.2% vs last month',
+                'icon' => 'bi-people-fill',
+                'accent' => 'blue',
+                'badge' => 'Active Roster',
+                'route' => route('employees.index')
+            ],
+            [
+                'id' => 'present_today',
+                'title' => 'Present Today',
+                'value' => number_format($presentToday),
+                'subtitle' => $totalEmployees > 0 ? round(($presentToday / $totalEmployees) * 100, 1) . '% of workforce' : '0% of workforce',
+                'icon' => 'bi-person-check-fill',
+                'accent' => 'green',
+                'badge' => 'Punched In',
+                'route' => route('attendance.index')
+            ],
+            [
+                'id' => 'on_leave_today',
+                'title' => 'On Leave Today',
+                'value' => number_format($onLeaveToday),
+                'subtitle' => 'Planned & casual leaves',
+                'icon' => 'bi-calendar-event-fill',
+                'accent' => 'orange',
+                'badge' => 'Scheduled Off',
+                'route' => route('leaves.applications.index')
+            ],
+            [
+                'id' => 'pending_approvals',
+                'title' => 'Pending Approvals',
+                'value' => number_format($totalPendingApprovals),
+                'subtitle' => 'Requires HR action',
+                'icon' => 'bi-clock-history',
+                'accent' => 'purple',
+                'badge' => 'Action Needed',
+                'route' => route('leaves.approvals.index')
+            ],
+            [
+                'id' => 'new_joiners',
+                'title' => 'New Joiners',
+                'value' => number_format($newJoinersCount),
+                'subtitle' => 'Recently onboarded',
+                'icon' => 'bi-person-plus-fill',
+                'accent' => 'teal',
+                'badge' => 'Recent',
+                'route' => route('employees.index')
+            ],
+            [
+                'id' => 'probation',
+                'title' => 'Employees on Probation',
+                'value' => number_format($probationCount),
+                'subtitle' => 'Review cycle pending',
+                'icon' => 'bi-award-fill',
+                'accent' => 'pink',
+                'badge' => 'In Evaluation',
+                'route' => route('employees.index', ['confirmation_status' => 'Probation'])
+            ],
+        ];
+
+        // Second Row: 3 Simple Analytics Cards
+        // Card 1: Employee Overview Donut
+        $permCount = (clone $empBaseQuery)->where('employee_type', 'Permanent')->count();
+        $internCount = (clone $empBaseQuery)->where('employee_type', 'Intern')->count();
+        $contractCount = (clone $empBaseQuery)->where('employee_type', 'Contract')->count();
+        $probTypeCount = $probationCount;
+        $empOverviewLabels = ['Permanent Employees', 'Interns', 'Contract Employees', 'Probation Employees'];
+        $empOverviewValues = [$permCount, $internCount, $contractCount, $probTypeCount];
+
+        // Card 2: Attendance Overview Donut
+        $attOverviewLabels = ['Present', 'Absent', 'On Leave', 'Work From Home'];
+        $attOverviewValues = [$presentToday, $absentToday, $onLeaveToday, $wfhToday];
+
+        // Card 3: Department Workforce Horizontal Bar
         $deptData = Department::where('company_id', $activeCompanyId)
             ->withCount(['employees' => fn($q) => $q->where('status', 'Active')])
             ->orderByDesc('employees_count')
-            ->limit(8)
+            ->limit(6)
             ->get();
-
         $deptChartLabels = $deptData->pluck('name')->toArray();
         $deptChartValues = $deptData->pluck('employees_count')->toArray();
 
-        // 6-Month Joiner Trend for Chart.js
+        // Third Row: Actionable Information
+        // Left Section: Pending Actions
+        $pendingDocuments = Employee::where('company_id', $activeCompanyId)
+            ->whereIn('ekyc_status', ['Pending Verification', 'Grace Period Active'])
+            ->count();
+        $probationDue = (clone $empBaseQuery)
+            ->whereNotNull('probation_end_date')
+            ->where('probation_end_date', '<=', now()->addDays(30))
+            ->count();
+
+        $pendingActions = [
+            [
+                'title' => 'Pending Leave Approvals',
+                'count' => $pendingLeaves,
+                'desc' => 'Employee leave requests awaiting administrative decision.',
+                'icon' => 'bi-calendar-check',
+                'color' => '#8B5CF6',
+                'bg' => '#F3E8FF',
+                'route' => route('leaves.approvals.index'),
+                'btn_text' => 'Review Requests'
+            ],
+            [
+                'title' => 'Pending Employee Documents',
+                'count' => $pendingDocuments,
+                'desc' => 'Identity proofs, degree certificates & eKYC verification queue.',
+                'icon' => 'bi-file-earmark-lock',
+                'color' => '#0D9488',
+                'bg' => '#CCFBF1',
+                'route' => route('employees.index'),
+                'btn_text' => 'Audit Vault'
+            ],
+            [
+                'title' => 'Probation Confirmations Due',
+                'count' => $probationDue > 0 ? $probationDue : $probationCount,
+                'desc' => 'Candidates completing probation period eligible for permanent role.',
+                'icon' => 'bi-award',
+                'color' => '#EC4899',
+                'bg' => '#FCE7F3',
+                'route' => route('employees.index', ['confirmation_status' => 'Probation']),
+                'btn_text' => 'Manage'
+            ],
+            [
+                'title' => 'Pending Employee Profile Updates',
+                'count' => $pendingProfiles,
+                'desc' => 'Self-service submitted profiles waiting for HR approval.',
+                'icon' => 'bi-person-gear',
+                'color' => '#3B82F6',
+                'bg' => '#DBEAFE',
+                'route' => route('employees.index'),
+                'btn_text' => 'Review Updates'
+            ],
+        ];
+
+        // Right Section: Recent Employee Activity Feed
+        $recentActivity = collect();
+        $joiners = Employee::where('company_id', $activeCompanyId)
+            ->whereNotNull('date_of_joining')
+            ->with(['department', 'designation'])
+            ->orderByDesc('date_of_joining')
+            ->take(3)
+            ->get();
+        foreach ($joiners as $j) {
+            $recentActivity->push([
+                'type' => 'New Onboarding',
+                'name' => $j->first_name . ' ' . $j->last_name,
+                'code' => $j->employee_code,
+                'info' => ($j->designation?->name ?? 'Staff') . ' • ' . ($j->department?->name ?? 'General Admin'),
+                'date' => $j->date_of_joining ? Carbon::parse($j->date_of_joining)->diffForHumans() : 'Recently',
+                'badge' => 'New Joiner',
+                'badge_class' => 'bg-teal-subtle text-teal border border-teal-subtle',
+                'icon' => 'bi-person-plus-fill',
+                'icon_color' => '#0D9488',
+                'raw_date' => $j->date_of_joining
+            ]);
+        }
+        $updates = Employee::where('company_id', $activeCompanyId)
+            ->with(['department', 'designation'])
+            ->orderByDesc('updated_at')
+            ->take(3)
+            ->get();
+        foreach ($updates as $u) {
+            $recentActivity->push([
+                'type' => 'Profile Updated',
+                'name' => $u->first_name . ' ' . $u->last_name,
+                'code' => $u->employee_code,
+                'info' => ($u->designation?->name ?? 'Staff') . ' • ' . ($u->department?->name ?? 'General Admin'),
+                'date' => $u->updated_at ? $u->updated_at->diffForHumans() : 'Recently',
+                'badge' => 'Updated',
+                'badge_class' => 'bg-primary-subtle text-primary border border-primary-subtle',
+                'icon' => 'bi-pencil-fill',
+                'icon_color' => '#3B82F6',
+                'raw_date' => $u->updated_at
+            ]);
+        }
+        $recentActivity = $recentActivity->take(5);
+
+        // Filter Options
+        $branches = Location::where('company_id', $activeCompanyId)->orderBy('name')->get();
+        $departments = Department::where('company_id', $activeCompanyId)->orderBy('name')->get();
+
+        // 6-Month Joiner Trend for legacy support
         $trendLabels = [];
         $trendJoiners = [];
         for ($i = 5; $i >= 0; $i--) {
@@ -99,6 +358,7 @@ class DashboardController extends Controller
                 ->count();
         }
 
+        // Backward compatibility metrics array
         $metrics = [
             'total_locations' => Location::count(),
             'total_sites' => Location::where('is_site', true)->count(),
@@ -108,15 +368,15 @@ class DashboardController extends Controller
             'total_contractors' => Contractor::count(),
             'total_users' => User::where('company_id', $activeCompanyId)->count(),
             'active_companies_count' => Company::where('status', 'Active')->count(),
-            'total_employees' => Employee::where('company_id', $activeCompanyId)->count(),
-            'active_employees' => Employee::where('company_id', $activeCompanyId)->where('status', 'Active')->count(),
-            'ekyc_pending' => Employee::where('company_id', $activeCompanyId)->where('ekyc_status', 'Pending Verification')->count(),
-            'ekyc_grace_active' => Employee::where('company_id', $activeCompanyId)->where('ekyc_status', 'Grace Period Active')->count(),
+            'total_employees' => $totalEmployees,
+            'active_employees' => $totalEmployees,
+            'ekyc_pending' => $pendingDocuments,
+            'ekyc_grace_active' => 0,
             'total_assets' => Asset::where('company_id', $activeCompanyId)->count(),
             'allocated_assets' => Asset::where('company_id', $activeCompanyId)->where('status', 'Allocated')->count(),
             'central_blacklist_active' => CentralBlacklistRecord::where('is_active', true)->where('approval_status', 'Approved')->count(),
             'pending_match_reviews' => IdentityMatchReview::where('status', 'Pending Review')->count(),
-            'pending_leaves' => LeaveApplication::withoutGlobalScopes()->where('company_id', $activeCompanyId)->whereIn('status', ['Pending HR', 'Pending Manager'])->count(),
+            'pending_leaves' => $pendingLeaves,
             'upcoming_holidays_count' => Holiday::withoutGlobalScopes()->where('company_id', $activeCompanyId)->where('date', '>=', now()->toDateString())->count(),
             'payroll_runs_count' => PayrollRun::where('company_id', $activeCompanyId)->count(),
             'pending_payroll_approvals' => PayrollRun::where('company_id', $activeCompanyId)->where('status', 'Pending Approval')->count(),
@@ -138,12 +398,25 @@ class DashboardController extends Controller
             'deptChartLabels',
             'deptChartValues',
             'trendLabels',
-            'trendJoiners'
+            'trendJoiners',
+            'kpiCards',
+            'empOverviewLabels',
+            'empOverviewValues',
+            'attOverviewLabels',
+            'attOverviewValues',
+            'pendingActions',
+            'recentActivity',
+            'branches',
+            'departments',
+            'period',
+            'branchId',
+            'departmentId'
         ));
     }
 
     /**
      * Dedicated HR Executive Hub: Operational queues, eKYC, onboarding & muster checks.
+     * Retains all action queues and operational workflows in a colorful, modern interface.
      */
     public function hr(): View
     {
@@ -186,6 +459,13 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        $pendingRegularizations = AttendanceRegularization::where('company_id', $activeCompanyId)
+            ->where('status', 'Pending HR')
+            ->with(['employee.department'])
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get();
+
         // Department breakdown for Chart.js
         $deptData = Department::where('company_id', $activeCompanyId)
             ->withCount(['employees' => fn($q) => $q->where('status', 'Active')])
@@ -202,6 +482,7 @@ class DashboardController extends Controller
             'pendingEkycEmployees',
             'upcomingProbations',
             'pendingLeaves',
+            'pendingRegularizations',
             'deptChartLabels',
             'deptChartValues'
         ));

@@ -87,6 +87,26 @@ class User extends Authenticatable
         return $this->role ? $this->role->hasPermission($permission) : false;
     }
 
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole('super_admin') || ($this->role && $this->role->name === 'super_admin');
+    }
+
+    public function isTenantAdmin(): bool
+    {
+        return $this->hasRole('ho_admin') || $this->can_switch_company;
+    }
+
+    public function isCompanyAdmin(): bool
+    {
+        return $this->hasRole(['company_admin', 'hr_executive']) || ($this->isHoAdmin() && !$this->can_switch_company);
+    }
+
+    public function isBranchAdmin(): bool
+    {
+        return $this->hasRole('branch_admin') || ($this->role && $this->role->name === 'branch_admin');
+    }
+
     public function isHoAdmin(): bool
     {
         return $this->hasRole(['ho_admin', 'super_admin']);

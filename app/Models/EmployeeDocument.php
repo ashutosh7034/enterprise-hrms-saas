@@ -16,6 +16,7 @@ class EmployeeDocument extends Model
     protected $fillable = [
         'employee_id',
         'document_type',
+        'document_category',
         'file_path',
         'original_name',
         'mime_type',
@@ -27,6 +28,8 @@ class EmployeeDocument extends Model
         'verified_at',
         'version',
         'uploaded_by',
+        'expiry_date',
+        'remarks',
     ];
 
     protected function casts(): array
@@ -34,6 +37,7 @@ class EmployeeDocument extends Model
         return [
             'is_mandatory' => 'boolean',
             'verified_at' => 'datetime',
+            'expiry_date' => 'date',
             'version' => 'integer',
             'file_size_kb' => 'integer',
         ];

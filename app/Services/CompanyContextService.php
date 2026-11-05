@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Company;
+use App\Models\Location;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
@@ -112,11 +113,17 @@ class CompanyContextService
         $authUser = Auth::guard('web')->user() ?: Auth::user();
         $user = ($authUser instanceof User) ? $authUser : null;
         if (!$user) {
-            return Company::where('status', 'Active')->get();
+            return Company::where('status', 'Active')->orderBy('name')->get();
         }
 
+        // 1. Super Admin has unrestricted access across all active enterprise companies
+        if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+            return Company::where('status', 'Active')->orderBy('name')->get();
+        }
+
+        // 2. Tenant Admin (HO Admin with Tenant context): strictly filtered to their tenant
         if ($this->canUserSwitchCompany($user)) {
-            $userTenantId = $user->company?->tenant_id;
+            $userTenantId = $user->company?->tenant_id ?: $this->getActiveTenantId();
             if ($userTenantId) {
                 return Company::where('tenant_id', $userTenantId)
                     ->where('status', 'Active')
@@ -124,15 +131,88 @@ class CompanyContextService
                     ->get();
             }
 
+            if ($user->company_id) {
+                return Company::where('id', $user->company_id)->where('status', 'Active')->get();
+            }
+        }
+
+        // 3. Company Admin / Branch Admin / Single-Company User: strictly their assigned company
+        if ($user->company_id) {
             return Company::where('id', $user->company_id)->where('status', 'Active')->get();
         }
 
-        return Company::where('id', $user->company_id)->where('status', 'Active')->get();
+        return Company::where('status', 'Active')->whereRaw('1 = 0')->get();
+    }
+
+    public function getAccessibleLocations(?Collection $companies = null): Collection
+    {
+        $companies = $companies ?: $this->getAccessibleCompanies();
+        $companyIds = $companies->pluck('id')->all();
+
+        $authUser = Auth::guard('web')->user() ?: Auth::user();
+        $user = ($authUser instanceof User) ? $authUser : null;
+
+        $query = Location::whereIn('company_id', $companyIds)
+            ->where('status', 'Active')
+            ->orderBy('name');
+
+        // 4. Branch Admin: strictly filtered to their assigned branch facility
+        if ($user && method_exists($user, 'isBranchAdmin') && $user->isBranchAdmin()) {
+            $empLocationId = $user->employee?->location_id;
+            if ($empLocationId) {
+                $query->where('id', $empLocationId);
+            }
+        }
+
+        return $query->get();
+    }
+
+    public function canAccessCompany(int $companyId): bool
+    {
+        return $this->getAccessibleCompanies()->pluck('id')->contains($companyId);
+    }
+
+    public function canAccessLocation(int $locationId, ?int $companyId = null): bool
+    {
+        $query = Location::where('id', $locationId)->where('status', 'Active');
+        if ($companyId) {
+            $query->where('company_id', $companyId);
+        }
+        $loc = $query->first();
+        if (!$loc) {
+            return false;
+        }
+
+        $authUser = Auth::guard('web')->user() ?: Auth::user();
+        $user = ($authUser instanceof User) ? $authUser : null;
+
+        if ($user && method_exists($user, 'isBranchAdmin') && $user->isBranchAdmin()) {
+            $empLocationId = $user->employee?->location_id;
+            if ($empLocationId && $empLocationId !== $locationId) {
+                return false;
+            }
+        }
+
+        return $this->canAccessCompany($loc->company_id);
     }
 
     public function canUserSwitchCompany(mixed $user): bool
     {
         if (!$user || !($user instanceof User)) {
+            return false;
+        }
+
+        if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+            return true;
+        }
+
+        // Explicitly disallowed from switching
+        if ($user->can_switch_company === false) {
+            return false;
+        }
+
+        // Company Admin and Branch Admin roles are strictly isolated to a single company
+        if ($user->hasRole(['company_admin', 'branch_admin', 'hr_executive', 'manager_mss', 'employee_ess', 'employee'])) {
             return false;
         }
 

@@ -102,19 +102,25 @@
                                     {{ $log->user_agent }}
                                 </div>
                             </td>
-                            <td class="small" style="max-width: 320px;">
-                                @if($log->old_values && count($log->old_values) > 0)
-                                    <div class="text-danger small mb-1">
-                                        <strong>Old:</strong> <code>{{ json_encode($log->old_values) }}</code>
-                                    </div>
-                                @endif
-                                @if($log->new_values && count($log->new_values) > 0)
-                                    <div class="text-success small">
-                                        <strong>New:</strong> <code>{{ json_encode($log->new_values) }}</code>
-                                    </div>
-                                @endif
-                                @if(!$log->old_values && !$log->new_values)
-                                    <span class="text-muted">No state payload</span>
+                            <td class="small" style="max-width: 340px;">
+                                @if($log->action === 'COMPANY_SWITCH' || $log->action === 'LOGIN' || $log->action === 'LOGOUT')
+                                    <div>{!! $log->formatted_details !!}</div>
+                                @else
+                                    @if($log->old_values && count($log->old_values) > 0)
+                                        <div class="small mb-1">
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle me-1" style="font-size: 9.5px;">BEFORE</span>
+                                            {!! $log->formatValuesArray($log->old_values) !!}
+                                        </div>
+                                    @endif
+                                    @if($log->new_values && count($log->new_values) > 0)
+                                        <div class="small">
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle me-1" style="font-size: 9.5px;">AFTER</span>
+                                            {!! $log->formatValuesArray($log->new_values) !!}
+                                        </div>
+                                    @endif
+                                    @if(!$log->old_values && !$log->new_values)
+                                        <span class="text-muted fst-italic">System recorded</span>
+                                    @endif
                                 @endif
                             </td>
                         </tr>

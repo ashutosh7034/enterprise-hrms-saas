@@ -19,7 +19,8 @@ class CompanyController extends Controller
     {
         abort_if(!Auth::user()->isHoAdmin(), 403, 'Unauthorized. Only HO Team Admins can view legal entities.');
 
-        $companies = Company::withCount(['locations', 'departments', 'categories', 'contractors'])->get();
+        $companies = $this->companyContext->getAccessibleCompanies()
+            ->loadCount(['locations', 'departments', 'categories', 'contractors']);
         return view('masters.companies.index', compact('companies'));
     }
 
@@ -80,6 +81,10 @@ class CompanyController extends Controller
     {
         if (!Auth::user()->isHoAdmin()) {
             abort(403, 'Unauthorized. Only HO Team Admins can modify legal entities.');
+        }
+
+        if (!$this->companyContext->canAccessCompany($company->id)) {
+            abort(403, 'Unauthorized. You cannot modify a company outside your authorized tenant.');
         }
 
         $validated = $request->validate([
